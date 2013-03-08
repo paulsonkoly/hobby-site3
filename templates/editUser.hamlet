@@ -1,0 +1,5 @@
+<h1>Edit #{userName user}
+<form method=post enctype=#{enctype}>
+   ^{userWidget}
+   <div>
+      <input type=submit value="Edit user">

@@ -4,8 +4,7 @@ import Prelude
 import Yesod
 import Yesod.Static
 import Yesod.Auth
-import Yesod.Auth.BrowserId
-import Yesod.Auth.GoogleEmail
+import Yesod.Auth.HashDB (authHashDB, getAuthIdHashDB)
 import Yesod.Default.Config
 import Yesod.Default.Util (addStaticContentExternal)
 import Network.HTTP.Conduit (Manager)
@@ -20,6 +19,8 @@ import Text.Jasmine (minifym)
 import Web.ClientSession (getKey)
 import Text.Hamlet (hamletFile)
 import System.Log.FastLogger (Logger)
+
+import Data.Maybe
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -59,6 +60,13 @@ mkMessage "App" "messages" "en"
 mkYesodData "App" $(parseRoutesFile "config/routes")
 
 type Form x = Html -> MForm App App (FormResult x, Widget)
+
+
+-- | Maybe the current user wrapped in Yesod monad
+currentUserM = maybeAuthId >>= \maid -> if isJust maid
+   then runDB $ get $ fromJust maid 
+   else return Nothing
+
 
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
@@ -138,15 +146,10 @@ instance YesodAuth App where
     -- Where to send a user after logout
     logoutDest _ = HomeR
 
-    getAuthId creds = runDB $ do
-        x <- getBy $ UniqueUser $ credsIdent creds
-        case x of
-            Just (Entity uid _) -> return $ Just uid
-            Nothing -> do
-                fmap Just $ insert $ User (credsIdent creds) Nothing
-
     -- You can add other plugins like BrowserID, email or OAuth here
-    authPlugins _ = [authBrowserId, authGoogleEmail]
+
+    getAuthId     = getAuthIdHashDB AuthR (Just . UniqueUser)
+    authPlugins _ = [authHashDB (Just . UniqueUser)]
 
     authHttpManager = httpManager
 

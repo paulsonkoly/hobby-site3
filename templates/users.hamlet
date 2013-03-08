@@ -1,0 +1,15 @@
+<h1> Users
+$if null users
+    <p> There are no users yet
+$else
+    <ul>
+        $forall Entity userId user <- users
+            <li> 
+                <a href=@{UserR userId} > #{userName user}
+-- userAdmin currentUser
+$if True 
+  <hr>
+  <form method=post enctype=#{enctype}>
+    ^{userWidget}
+    <div>
+        <input type=submit value="Post New User">

@@ -5,3 +5,8 @@
 /robots.txt RobotsR GET
 
 / HomeR GET POST
+
+/users             UsersR      GET POST
+/user/#UserId      UserR       GET
+/user/#UserId/edit EditUserR   GET 
+/user/#UserId/del  DeleteUserR POST
