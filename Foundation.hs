@@ -20,6 +20,7 @@ import Web.ClientSession (getKey)
 import Text.Hamlet (hamletFile)
 import System.Log.FastLogger (Logger)
 
+import Control.Monad
 import Data.Maybe
 
 -- | The site argument for your application. This can be a good place to
@@ -62,10 +63,35 @@ mkYesodData "App" $(parseRoutesFile "config/routes")
 type Form x = Html -> MForm App App (FormResult x, Widget)
 
 
--- | Maybe the current user wrapped in Yesod monad
+currentUserM :: GHandler s App (Maybe User)
 currentUserM = maybeAuthId >>= \maid -> if isJust maid
-   then runDB $ get $ fromJust maid 
+   then runDB $ get $ fromJust maid
    else return Nothing
+
+
+-- | Authourization for pages that require logged in user wrapped in GHandler
+isLoggedIn :: Handler AuthResult
+isLoggedIn = let
+   toAuthorization (Just _) = Authorized
+   toAuthorization Nothing  = AuthenticationRequired
+   in liftM toAuthorization currentUserM
+
+
+-- | Authorization for pages that require admin wrapped in GHandler
+isAdmin :: GHandler s App AuthResult
+isAdmin = let
+   toAuthorization (Just user) = if userAdmin user
+      then Authorized
+      else Unauthorized "You don't have the authorization to access the resource"  
+   toAuthorization Nothing = AuthenticationRequired
+   in liftM toAuthorization currentUserM
+
+
+-- | Authorization for pages that require admin or 'uid' matching wrapped in GHandler
+isSelfOrAdmin :: UserId -> GHandler s App AuthResult
+isSelfOrAdmin uid = maybeAuthId >>= \maid -> if maid == Just uid
+   then return Authorized
+   else isAdmin 
 
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -106,6 +132,22 @@ instance Yesod App where
     -- The page to be redirected to when authentication is required.
     authRoute _ = Just $ AuthR LoginR
 
+    isAuthorized HomeR       False = return Authorized
+    isAuthorized (AuthR _)   _     = return Authorized
+    isAuthorized (StaticR _) False = return Authorized
+    isAuthorized FaviconR    False = return Authorized
+    isAuthorized RobotsR     False = return Authorized
+
+    -- route name, then a boolean indicating if it's a write request
+    isAuthorized UsersR          _ = isAdmin
+    isAuthorized (UserR uid)     _ = isSelfOrAdmin uid
+    isAuthorized (EditUserR uid) _ = isSelfOrAdmin uid
+    isAuthorized (DeleteUserR _) _ = isAdmin
+
+    -- default deny 
+    isAuthorized _ _ = return
+       $ Unauthorized "This resource is not accessable because we are hitting default deny"
+
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
     -- expiration dates to be set far in the future without worry of
@@ -145,8 +187,6 @@ instance YesodAuth App where
     loginDest _ = HomeR
     -- Where to send a user after logout
     logoutDest _ = HomeR
-
-    -- You can add other plugins like BrowserID, email or OAuth here
 
     getAuthId     = getAuthIdHashDB AuthR (Just . UniqueUser)
     authPlugins _ = [authHashDB (Just . UniqueUser)]
