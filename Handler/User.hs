@@ -30,7 +30,7 @@ entryForm muser =
 getUsersR :: Handler RepHtml
 getUsersR = do
     users <- runDB $ selectList [] [Desc UserName]
-    --Just currentUser <- currentUserM
+    Just currentUser <- currentUserM
     (userWidget, enctype) <- generateFormPost $ entryForm Nothing
     defaultLayout $(widgetFile "users") 
 

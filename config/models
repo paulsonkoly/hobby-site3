@@ -5,4 +5,9 @@ User
    admin Bool
    UniqueUser name
 
+Image
+   userId UserId
+   md5    Text
+   UniqueImage md5
+
  -- By default this file is used in Model.hs (which is imported by Foundation.hs)

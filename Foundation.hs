@@ -139,10 +139,16 @@ instance Yesod App where
     isAuthorized RobotsR     False = return Authorized
 
     -- route name, then a boolean indicating if it's a write request
-    isAuthorized UsersR          _ = isAdmin
-    isAuthorized (UserR uid)     _ = isSelfOrAdmin uid
-    isAuthorized (EditUserR uid) _ = isSelfOrAdmin uid
-    isAuthorized (DeleteUserR _) _ = isAdmin
+    isAuthorized UsersR           _ = isAdmin
+    isAuthorized (UserR uid)      _ = isSelfOrAdmin uid
+    isAuthorized (EditUserR uid)  _ = isSelfOrAdmin uid
+    isAuthorized (DeleteUserR _)  _ = isAdmin
+
+    isAuthorized ImagesR          _ = return Authorized
+    isAuthorized (ImageR _)       _ = return Authorized
+    isAuthorized CreateImageR     _ = return Authorized
+    isAuthorized (EditImageR _)   _ = return Authorized
+    isAuthorized (DeleteImageR _) _ = return Authorized
 
     -- default deny 
     isAuthorized _ _ = return
