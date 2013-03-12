@@ -154,6 +154,9 @@ instance Yesod App where
     isAuthorized _ _ = return
        $ Unauthorized "This resource is not accessable because we are hitting default deny"
 
+    maximumContentLength _ (Just CreateImageR) = 30 * 1024 * 1024 -- 30 Mb
+    maximumContentLength _ _ =  512 * 1024                            -- 0.5 megabyte
+
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
     -- expiration dates to be set far in the future without worry of

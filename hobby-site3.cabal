@@ -22,6 +22,7 @@ library
                      Handler.Home
                      Handler.User
                      Handler.Image
+                     Lib.ImageInfo
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT
@@ -75,6 +76,12 @@ library
                  , conduit                       >= 1.0
                  , monad-logger                  >= 0.3
                  , fast-logger                   >= 0.3
+                 , unix
+                 , pureMD5
+                 , crypto-conduit
+                 , cereal
+                 , exif
+                 , time
 
 executable         hobby-site3
     if flag(library-only)

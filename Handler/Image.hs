@@ -10,7 +10,12 @@ module Handler.Image
 where
 
 import Import
-import Yesod.Form.Jquery
+import Data.Text (unpack, append)
+import Data.Conduit
+import Data.Conduit.Binary
+import Control.Monad
+
+import Lib.ImageInfo
 
 getImagesR :: Handler RepHtml
 getImagesR = defaultLayout $ setTitle "image listing" 
@@ -22,8 +27,8 @@ postImagesR = notFound
 uploadWidget = do
    addStylesheet   $ StaticR css_jquery_fileupload_ui_css
    addStylesheet   $ StaticR css_style_css
-   addScriptRemote $ "//code.jquery.com/jquery-1.9.1.min.js"
-   addScriptRemote $ "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
+   addScriptRemote   "//code.jquery.com/jquery-1.9.1.min.js"
+   addScriptRemote   "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
    addScript       $ StaticR js_load_image_js
    addScript       $ StaticR js_tmpl_js
    addScript       $ StaticR js_canvas_to_blob_js
@@ -49,16 +54,21 @@ getCreateImageR = do
 
 
 postCreateImageR :: Handler RepJson
-postCreateImageR = jsonToRepJson $ object
-   [ "files" .= 
-      ([
-         
---         object
---         [ "name" .= ("picture1.jpg" :: Text)
---         , "size" .= (123456 :: Integer)
---         ]
-      ] :: [Int])
-   ]
+postCreateImageR = do
+   files <- lookupFiles "files[]"
+   sizes <- forM files $ \f -> do
+      $(logDebug) $ "File upload request " `Data.Text.append` fileName f
+      liftIO $ runResourceT $ fileSource f $$ sinkFile $ filePath f 
+      imageInfo <- liftIO $ getImageInfo $ filePath f 
+      return $ byteSize imageInfo
+   jsonToRepJson $ object [ "files" .= zipWith toJsonFile files sizes ]
+   where
+      filePath = unpack . fileName
+      toJsonFile info size = object
+         [ "name" .= fileName info
+         , "size" .= toInteger size
+         ]
+
 
 getImageR :: ImageId -> Handler RepHtml
 getImageR _ = notFound
