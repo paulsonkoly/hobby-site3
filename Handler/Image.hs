@@ -10,12 +10,13 @@ module Handler.Image
 where
 
 import Import
-import Data.Text (unpack, append)
-import Data.Conduit
-import Data.Conduit.Binary
+
+import Yesod.Auth
+
+import Data.Text (append)
 import Control.Monad
 
-import Lib.ImageInfo
+import Lib.Image
 
 getImagesR :: Handler RepHtml
 getImagesR = defaultLayout $ setTitle "image listing" 
@@ -56,18 +57,20 @@ getCreateImageR = do
 postCreateImageR :: Handler RepJson
 postCreateImageR = do
    files <- lookupFiles "files[]"
-   sizes <- forM files $ \f -> do
+   Just uid <- maybeAuthId
+   infos <- forM files $ \f -> do
       $(logDebug) $ "File upload request " `Data.Text.append` fileName f
-      liftIO $ runResourceT $ fileSource f $$ sinkFile $ filePath f 
-      imageInfo <- liftIO $ getImageInfo $ filePath f 
-      return $ byteSize imageInfo
-   jsonToRepJson $ object [ "files" .= zipWith toJsonFile files sizes ]
+      imageData <- liftIO $ newImage f uid
+      either (const $ return ()) (runDB . insert_ . snd) imageData
+      return imageData
+   jsonToRepJson $ object [ "files" .= zipWith toJsonFile files infos ]
    where
-      filePath = unpack . fileName
-      toJsonFile info size = object
-         [ "name" .= fileName info
-         , "size" .= toInteger size
+      toJsonFile file (Right info) = object
+         [ "name" .= fileName file
+         , "size" .= fst info
          ]
+      toJsonFile _ (Left errMsg) = object
+         [ "error" .= errMsg ]
 
 
 getImageR :: ImageId -> Handler RepHtml

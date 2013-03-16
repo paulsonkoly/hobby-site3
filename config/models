@@ -6,8 +6,39 @@ User
    UniqueUser name
 
 Image
-   userId UserId
-   md5    Text
-   UniqueImage md5
+   userId                   UserId
+   md5Hash                  Text
+   origName                 Text
+   make                     String   Maybe
+   model                    String   Maybe
+   xResolution              Int64    Maybe
+   yResolution              Int64    Maybe
+   resolutionUnit           String   Maybe
+   dateTime                 UTCTime  Maybe
+   compression              String   Maybe
+   exposureTime             Double   Maybe
+   fNumber                  Double   Maybe
+   exposureProgram          String   Maybe
+   iSOSpeedRatings          Int64    Maybe
+   exifVersion              String   Maybe
+   dateTimeOriginal         UTCTime  Maybe
+   dateTimeDigitized        UTCTime  Maybe
+   exposureBiasValue        Double   Maybe
+   subjectDistance          Double   Maybe
+   meteringMode             String   Maybe
+   flash                    String   Maybe
+   focalLength              Double   Maybe
+   subSecTimeOriginal       Int64    Maybe
+   subSecTimeDigitized      Int64    Maybe
+   focalPlaneXResolution    Double   Maybe
+   focalPlaneYResolution    Double   Maybe
+   focalPlaneResolutionUnit String   Maybe
+   customRendered           String   Maybe
+   exposureMode             String   Maybe
+   whiteBalance             String   Maybe
+   sceneCaptureType         String   Maybe
+   flashPixVersion          String   Maybe
+   colorSpace               String   Maybe
+   UniqueImage              md5Hash
 
  -- By default this file is used in Model.hs (which is imported by Foundation.hs)

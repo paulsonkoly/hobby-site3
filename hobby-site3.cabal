@@ -22,7 +22,7 @@ library
                      Handler.Home
                      Handler.User
                      Handler.Image
-                     Lib.ImageInfo
+                     Lib.Image
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT
@@ -81,7 +81,9 @@ library
                  , crypto-conduit
                  , cereal
                  , exif
+                 , gd
                  , time
+                 , old-locale
 
 executable         hobby-site3
     if flag(library-only)

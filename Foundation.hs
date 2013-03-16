@@ -70,7 +70,7 @@ currentUserM = maybeAuthId >>= \maid -> if isJust maid
 
 
 -- | Authourization for pages that require logged in user wrapped in GHandler
-isLoggedIn :: Handler AuthResult
+isLoggedIn :: GHandler s App AuthResult
 isLoggedIn = let
    toAuthorization (Just _) = Authorized
    toAuthorization Nothing  = AuthenticationRequired
@@ -146,7 +146,7 @@ instance Yesod App where
 
     isAuthorized ImagesR          _ = return Authorized
     isAuthorized (ImageR _)       _ = return Authorized
-    isAuthorized CreateImageR     _ = return Authorized
+    isAuthorized CreateImageR     _ = isLoggedIn 
     isAuthorized (EditImageR _)   _ = return Authorized
     isAuthorized (DeleteImageR _) _ = return Authorized
 
