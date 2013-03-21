@@ -20,6 +20,8 @@ import Web.ClientSession (getKey)
 import Text.Hamlet (hamletFile)
 import System.Log.FastLogger (Logger)
 
+import Lib.ImageType
+
 import Control.Monad
 import Data.Maybe
 
@@ -139,23 +141,24 @@ instance Yesod App where
     isAuthorized RobotsR     False = return Authorized
 
     -- route name, then a boolean indicating if it's a write request
-    isAuthorized UsersR           _ = isAdmin
-    isAuthorized (UserR uid)      _ = isSelfOrAdmin uid
-    isAuthorized (EditUserR uid)  _ = isSelfOrAdmin uid
-    isAuthorized (DeleteUserR _)  _ = isAdmin
+    isAuthorized UsersR              _ = isAdmin
+    isAuthorized (UserR uid)         _ = isSelfOrAdmin uid
+    isAuthorized (EditUserR uid)     _ = isSelfOrAdmin uid
+    isAuthorized (DeleteUserR _)     _ = isAdmin
 
-    isAuthorized ImagesR          _ = return Authorized
-    isAuthorized (ImageR _)       _ = return Authorized
-    isAuthorized CreateImageR     _ = isLoggedIn 
-    isAuthorized (EditImageR _)   _ = return Authorized
-    isAuthorized (DeleteImageR _) _ = return Authorized
+    isAuthorized ImagesR             _ = return Authorized
+    isAuthorized (ImageR _)          _ = return Authorized
+    isAuthorized CreateImageR        _ = isLoggedIn 
+    isAuthorized (EditImageR _)      _ = return Authorized
+    isAuthorized (DeleteImageR _)    _ = return Authorized
+    isAuthorized (ImageFileR _ _)    _ = return Authorized
 
     -- default deny 
     isAuthorized _ _ = return
        $ Unauthorized "This resource is not accessable because we are hitting default deny"
 
     maximumContentLength _ (Just CreateImageR) = 30 * 1024 * 1024 -- 30 Mb
-    maximumContentLength _ _ =  512 * 1024                            -- 0.5 megabyte
+    maximumContentLength _ _ =  512 * 1024                        -- 0.5 megabyte
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows

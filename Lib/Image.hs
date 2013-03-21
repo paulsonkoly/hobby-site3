@@ -2,8 +2,11 @@
 -- | Bunch of functions related to IO during image upload 
 -----------------------------------------------------------------------
 module Lib.Image
-   ( -- * Functions
+   (
+   -- * Functions
      newImage
+   -- * Handlers
+   , getImageFileR
    )
 where
 
@@ -35,9 +38,13 @@ import Data.Time.Clock
 import qualified Graphics.Exif as Exif
 import qualified Graphics.GD   as GD
 
+import Lib.ImageType
 
+-----------------------------------------------------------------------
+-- some constants
+-----------------------------------------------------------------------
 dirName :: FilePath
-dirName = "images/"
+dirName = "images"
 
 thumbSize   :: Int
 thumbSize   = 100
@@ -46,6 +53,16 @@ largeSize   = 670
 jpegQuality :: Int
 jpegQuality = 95
 
+
+imageFilePath :: ImageType -> String -> FilePath
+imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ (show i)  ++ ".jpeg"
+
+
+-- | serves an image file request
+getImageFileR :: ImageType -- ^ the image file type
+              -> String    -- ^ the image md5 hash
+              -> GHandler s a ()
+getImageFileR i s = sendFile typeJpeg $ imageFilePath i s
 
 toHex :: S.ByteString -> S.ByteString 
 toHex = S.concatMap word8ToHex
@@ -122,8 +139,8 @@ safeReadT Nothing  = Nothing
 
 
 
--- creates an image from the Exif and other bits
--- moved out from newImage only to improve readabality
+-- | creates an image from the Exif and other bits moved out from newImage
+-- only to improve readabality
 getExif :: UserId -> String -> Text -> FilePath -> IO Image 
 getExif uid hash fn original = do
    exif                      <- Exif.fromFile original
@@ -162,37 +179,38 @@ getExif uid hash fn original = do
       { imageUserId                   = uid
       , imageMd5Hash                  = T.pack hash
       , imageOrigName                 = fn 
-      , imageMake                     = make                    
-      , imageModel                    = model                   
-      , imageXResolution              = safeRead xResolution             
-      , imageYResolution              = safeRead yResolution             
-      , imageResolutionUnit           = resolutionUnit          
-      , imageDateTime                 = safeReadT dateTime                
-      , imageCompression              = compression             
-      , imageExposureTime             = safeReadET exposureTime            
-      , imageFNumber                  = safeReadF fNumber                 
-      , imageExposureProgram          = exposureProgram         
-      , imageISOSpeedRatings          = safeRead isoSpeedRatings         
-      , imageExifVersion              = exifVersion             
-      , imageDateTimeOriginal         = safeReadT dateTimeOriginal        
-      , imageDateTimeDigitized        = safeReadT dateTimeDigitized       
-      , imageExposureBiasValue        = safeRead exposureBiasValue       
-      , imageSubjectDistance          = safeRead subjectDistance         
-      , imageMeteringMode             = meteringMode            
-      , imageFlash                    = flash                   
-      , imageFocalLength              = safeRead focalLength             
-      , imageSubSecTimeOriginal       = safeRead subSecTimeOriginal      
-      , imageSubSecTimeDigitized      = safeRead subSecTimeDigitized     
-      , imageFocalPlaneXResolution    = safeRead focalPlaneXResolution   
-      , imageFocalPlaneYResolution    = safeRead focalPlaneYResolution   
+      , imageMake                     = make
+      , imageModel                    = model
+      , imageXResolution              = safeRead xResolution
+      , imageYResolution              = safeRead yResolution
+      , imageResolutionUnit           = resolutionUnit
+      , imageDateTime                 = safeReadT dateTime
+      , imageCompression              = compression
+      , imageExposureTime             = safeReadET exposureTime
+      , imageFNumber                  = safeReadF fNumber
+      , imageExposureProgram          = exposureProgram
+      , imageISOSpeedRatings          = safeRead isoSpeedRatings
+      , imageExifVersion              = exifVersion
+      , imageDateTimeOriginal         = safeReadT dateTimeOriginal
+      , imageDateTimeDigitized        = safeReadT dateTimeDigitized
+      , imageExposureBiasValue        = safeRead exposureBiasValue
+      , imageSubjectDistance          = safeRead subjectDistance
+      , imageMeteringMode             = meteringMode
+      , imageFlash                    = flash
+      , imageFocalLength              = safeRead focalLength
+      , imageSubSecTimeOriginal       = safeRead subSecTimeOriginal
+      , imageSubSecTimeDigitized      = safeRead subSecTimeDigitized
+      , imageFocalPlaneXResolution    = safeRead focalPlaneXResolution
+      , imageFocalPlaneYResolution    = safeRead focalPlaneYResolution
       , imageFocalPlaneResolutionUnit = focalPlaneResolutionUnit
-      , imageCustomRendered           = customRendered          
-      , imageExposureMode             = exposureMode            
-      , imageWhiteBalance             = whiteBalance            
-      , imageSceneCaptureType         = sceneCaptureType        
-      , imageFlashPixVersion          = flashPixVersion         
-      , imageColorSpace               = colorSpace              
+      , imageCustomRendered           = customRendered
+      , imageExposureMode             = exposureMode
+      , imageWhiteBalance             = whiteBalance
+      , imageSceneCaptureType         = sceneCaptureType
+      , imageFlashPixVersion          = flashPixVersion
+      , imageColorSpace               = colorSpace
       }
+
 
 -- | does everything needed from disk IO side to an image when it's
 -- uploaded. Does not raise exceptions. 'Left' return text is the error
@@ -206,11 +224,10 @@ newImage f uid = catch
       hash <- md5Hash temp
       size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
 
-      let extension = "jpeg" 
-      let original  = dirName ++ hash ++ "_original." ++ extension
-      let thumbnal  = dirName ++ hash ++ "_thumbnal." ++ extension
-      let large     = dirName ++ hash ++ "_large."    ++ extension
-      
+      let original  = imageFilePath Original hash
+      let thumbnal  = imageFilePath Thumbnail hash 
+      let large     = imageFilePath Large hash
+
       fileExist original >>= \exist -> if exist
          then return $ Left "MD5 checksum clashes or the image already exist on server."
          else do
@@ -222,7 +239,7 @@ newImage f uid = catch
 
             -- get the aspect ratio
             imageSize <- GD.imageSize nonModified
-            
+
             -- generate thumbnail
             thumbJpeg <- uncurry GD.resizeImage (retainAspectRatio thumbSize imageSize) nonModified
             GD.saveJpegFile jpegQuality thumbnal thumbJpeg

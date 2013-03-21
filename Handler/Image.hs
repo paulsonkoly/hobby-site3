@@ -13,13 +13,16 @@ import Import
 
 import Yesod.Auth
 
-import Data.Text (append)
+import Data.Text (append, unpack, pack)
 import Control.Monad
 
 import Lib.Image
+import Lib.ImageType
 
 getImagesR :: Handler RepHtml
-getImagesR = defaultLayout $ setTitle "image listing" 
+getImagesR = do
+	images <- runDB $ selectList [] [] 
+	defaultLayout $(widgetFile "images")
 
 postImagesR :: Handler RepHtml
 postImagesR = notFound
@@ -74,7 +77,12 @@ postCreateImageR = do
 
 
 getImageR :: ImageId -> Handler RepHtml
-getImageR _ = notFound
+getImageR imageId = do
+   image <- runDB $ get404 imageId
+   defaultLayout $ do
+      -- setTitle $ toHtml $  user
+      $(widgetFile "image")
+
 
 getEditImageR :: ImageId -> Handler RepHtml
 getEditImageR _ = notFound
