@@ -7,6 +7,7 @@ module Lib.Image
    (
    -- * Functions
      newImage
+   , deleteImage
    -- * Handlers
    , getImageFileR
    )
@@ -79,7 +80,7 @@ toHex = S.concatMap word8ToHex
       pad s   = s
 
 
--- | temporary file for sink protected. Temp race wouldn't matter here
+-- | temporary file for sink. Temp race wouldn't matter here
 -- but at least it's unique
 sinkToTemp :: FileInfo -> IO FilePath
 sinkToTemp f = do
@@ -216,12 +217,16 @@ getExif uid hash fn original = do
 
 
 data ImageException = MD5Exception
-     deriving (Typeable)
+   deriving (Typeable)
 
 instance Show ImageException where
    show MD5Exception = "MD5 checksum clashes or the image already exist on server."
 
 instance Exception ImageException
+
+
+removeIfExist :: FilePath -> IO ()
+removeIfExist fp = fileExist fp >>= flip when (removeLink fp)
 
 
 -- | does everything needed from disk IO side to an image when it's
@@ -236,8 +241,6 @@ newImage f uid = do
          size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
 
          let original  = imageFilePath Original hash
-         let thumbnal  = imageFilePath Thumbnail hash 
-         let large     = imageFilePath Large hash
 
          fileExist original >>= flip when (throwIO MD5Exception)
 
@@ -248,14 +251,17 @@ newImage f uid = do
          -- get the aspect ratio
          imageSize <- GD.imageSize nonModified
 
-         -- generate thumbnail
-         thumbJpeg <- uncurry GD.resizeImage (retainAspectRatio thumbSize imageSize) nonModified
-         GD.saveJpegFile jpegQuality thumbnal thumbJpeg
-
-         -- generate large
-         largeJpeg <- uncurry GD.resizeImage (retainAspectRatio largeSize imageSize) nonModified
-         GD.saveJpegFile jpegQuality large largeJpeg
+         -- generate thumbnail, large
+         forM_ [ ( Thumbnail, thumbSize ) , ( Large, largeSize ) ] (\ (t, s) -> do
+            modJpeg <- uncurry GD.resizeImage (retainAspectRatio s imageSize) nonModified
+            GD.saveJpegFile jpegQuality (imageFilePath t hash) modJpeg)
 
          return (size, image)
-      ) `finally` (fileExist temp >>= flip when (removeLink temp))
+      ) `finally` removeIfExist temp
+
+
+-- | Deletes all forms of the image from the hard drive.
+deleteImage :: String -- ^ The md5 checksum
+            -> IO ()
+deleteImage hash = mapM_ (removeIfExist . (`imageFilePath` hash)) [Original, Thumbnail, Large]
 

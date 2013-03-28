@@ -1,1 +1,6 @@
 <img class="img-polaroid" src="@{ImageFileR Large $ unpack $ imageMd5Hash image}">
+
+<form method="post" action="@{DeleteImageR imageId}">
+   <button type="submit" class="btn btn-danger delete">
+      <i class="icon-trash icon-white">
+      <span>Delete

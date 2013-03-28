@@ -14,16 +14,18 @@ import Import
 import Yesod.Auth
 import Yesod.Form.JQueryUpload
 
-import Data.Text (append, pack, unpack)
+import Data.Text (pack, unpack)
 import Control.Monad
 
 import Lib.Image
 import Lib.ImageType
 
+
 getImagesR :: Handler RepHtml
 getImagesR = do
-	images <- runDB $ selectList [] [] 
+	images <- runDB $ selectList [] []
 	defaultLayout $(widgetFile "images")
+
 
 postImagesR :: Handler RepHtml
 postImagesR = notFound
@@ -40,7 +42,7 @@ postCreateImageR = do
    files <- lookupFiles "files[]"
    Just uid <- maybeAuthId
    jsonContent <- forM files $ \f -> do
-         $(logDebug) $ "File upload request " `append` fileName f
+         $(logDebug) $ "File upload request " <> fileName f
          eitherImage <- liftIO $ newImage f uid
          either
             (\errMsg -> return $ object [ "error" .= pack (show $ errMsg) ])
@@ -69,8 +71,15 @@ getImageR imageId = do
       $(widgetFile "image")
 
 
+
 getEditImageR :: ImageId -> Handler RepHtml
 getEditImageR _ = notFound
 
+
 postDeleteImageR :: ImageId -> Handler RepHtml
-postDeleteImageR _ = notFound
+postDeleteImageR imageId = do
+   image <- runDB $ get404 imageId
+   setMessage $ toHtml $ "Image " <> (imageOrigName image) <> " has been deleted."
+   liftIO $ deleteImage $ unpack $ imageMd5Hash image
+   runDB $ delete $ imageId
+   redirect ImagesR
