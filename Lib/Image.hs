@@ -1,3 +1,5 @@
+{-# LANGUAGE  DeriveDataTypeable #-}
+
 -----------------------------------------------------------------------
 -- | Bunch of functions related to IO during image upload 
 -----------------------------------------------------------------------
@@ -29,6 +31,7 @@ import Data.Maybe
 import Data.List
 import Data.Word            (Word8)
 import Data.Serialize       (encode)
+import Data.Typeable
 import Data.Conduit
 import Data.Conduit.Binary
 import Crypto.Conduit
@@ -55,7 +58,7 @@ jpegQuality = 95
 
 
 imageFilePath :: ImageType -> String -> FilePath
-imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ (show i)  ++ ".jpeg"
+imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ show i ++ ".jpeg"
 
 
 -- | serves an image file request
@@ -212,42 +215,47 @@ getExif uid hash fn original = do
       }
 
 
+data ImageException = MD5Exception
+     deriving (Typeable)
+
+instance Show ImageException where
+   show MD5Exception = "MD5 checksum clashes or the image already exist on server."
+
+instance Exception ImageException
+
+
 -- | does everything needed from disk IO side to an image when it's
--- uploaded. Does not raise exceptions. 'Left' return text is the error
--- message on failure.
+-- uploaded. Does not raise exceptions.
 newImage :: FileInfo -- ^ The Yesod file info from the uploaded file 
          -> UserId   -- ^ The current user from Yesod
-         -> IO (Either T.Text (Int, Image))
-newImage f uid = catch
-   (do
-      temp <- sinkToTemp f
-      hash <- md5Hash temp
-      size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
+         -> IO (Either SomeException (Int, Image))
+newImage f uid = do
+   temp <- sinkToTemp f
+   try (do
+         hash <- md5Hash temp
+         size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
 
-      let original  = imageFilePath Original hash
-      let thumbnal  = imageFilePath Thumbnail hash 
-      let large     = imageFilePath Large hash
+         let original  = imageFilePath Original hash
+         let thumbnal  = imageFilePath Thumbnail hash 
+         let large     = imageFilePath Large hash
 
-      fileExist original >>= \exist -> if exist
-         then return $ Left "MD5 checksum clashes or the image already exist on server."
-         else do
-            rename temp original
+         fileExist original >>= flip when (throwIO MD5Exception)
 
-            image <- getExif uid hash (fileName f) original
+         rename temp original
+         image <- getExif uid hash (fileName f) original
+         nonModified <- GD.loadJpegFile original
 
-            nonModified <- GD.loadJpegFile original
+         -- get the aspect ratio
+         imageSize <- GD.imageSize nonModified
 
-            -- get the aspect ratio
-            imageSize <- GD.imageSize nonModified
+         -- generate thumbnail
+         thumbJpeg <- uncurry GD.resizeImage (retainAspectRatio thumbSize imageSize) nonModified
+         GD.saveJpegFile jpegQuality thumbnal thumbJpeg
 
-            -- generate thumbnail
-            thumbJpeg <- uncurry GD.resizeImage (retainAspectRatio thumbSize imageSize) nonModified
-            GD.saveJpegFile jpegQuality thumbnal thumbJpeg
+         -- generate large
+         largeJpeg <- uncurry GD.resizeImage (retainAspectRatio largeSize imageSize) nonModified
+         GD.saveJpegFile jpegQuality large largeJpeg
 
-            -- generate large
-            largeJpeg <- uncurry GD.resizeImage (retainAspectRatio largeSize imageSize) nonModified
-            GD.saveJpegFile jpegQuality large largeJpeg
-
-            return $ Right ( size, image ))
-   (\e -> return $ Left $ T.pack $ "newImage raised exception " ++ show (e :: SomeException)) 
+         return (size, image)
+      ) `finally` (fileExist temp >>= flip when (removeLink temp))
 

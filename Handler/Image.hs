@@ -14,7 +14,7 @@ import Import
 import Yesod.Auth
 import Yesod.Form.JQueryUpload
 
-import Data.Text (append, unpack)
+import Data.Text (append, pack, unpack)
 import Control.Monad
 
 import Lib.Image
@@ -40,10 +40,10 @@ postCreateImageR = do
    files <- lookupFiles "files[]"
    Just uid <- maybeAuthId
    jsonContent <- forM files $ \f -> do
-         $(logDebug) $ "File upload request " `Data.Text.append` fileName f
+         $(logDebug) $ "File upload request " `append` fileName f
          eitherImage <- liftIO $ newImage f uid
          either
-            (\errMsg -> return $ object [ "error" .= errMsg ])
+            (\errMsg -> return $ object [ "error" .= pack (show $ errMsg) ])
             (\image -> do
                imageId  <- runDB $ insert $ snd image
                renderer <- getUrlRender
