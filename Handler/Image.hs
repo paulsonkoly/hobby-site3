@@ -39,19 +39,26 @@ postCreateImageR :: Handler RepJson
 postCreateImageR = do
    files <- lookupFiles "files[]"
    Just uid <- maybeAuthId
-   infos <- forM files $ \f -> do
-      $(logDebug) $ "File upload request " `Data.Text.append` fileName f
-      imageData <- liftIO $ newImage f uid
-      either (const $ return ()) (runDB . insert_ . snd) imageData
-      return imageData
-   jsonToRepJson $ object [ "files" .= zipWith toJsonFile files infos ]
-   where
-      toJsonFile file (Right info) = object
-         [ "name" .= fileName file
-         , "size" .= fst info
-         ]
-      toJsonFile _ (Left errMsg) = object
-         [ "error" .= errMsg ]
+   jsonContent <- forM files $ \f -> do
+         $(logDebug) $ "File upload request " `Data.Text.append` fileName f
+         eitherImage <- liftIO $ newImage f uid
+         either
+            (\errMsg -> return $ object [ "error" .= errMsg ])
+            (\image -> do
+               imageId  <- runDB $ insert $ snd image
+               renderer <- getUrlRender
+               return $ object
+                  [ "name"          .= fileName f
+                  , "size"          .= fst image
+                  , "url"           .= renderer (ImageR imageId)
+                  , "thumbnail_url" .= renderer (ImageFileR Thumbnail (unpack $ imageMd5Hash $ snd image))
+                  , "delete_url"    .= renderer (DeleteImageR imageId)
+                  , "delete_type"   .= ("POST" :: Text)
+                  ]
+            )
+            eitherImage
+   jsonToRepJson $ object [ "files" .= jsonContent ]
+
 
 
 getImageR :: ImageId -> Handler RepHtml
