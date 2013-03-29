@@ -7,6 +7,7 @@ import Data.Text (Text)
 import Data.Time.Clock
 import Data.Int
 import Database.Persist.Quasi
+import Lib.Accessibility
 
 
 -- You can define all of your database entities in the entities file.

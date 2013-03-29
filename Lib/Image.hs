@@ -8,8 +8,7 @@ module Lib.Image
    -- * Functions
      newImage
    , deleteImage
-   -- * Handlers
-   , getImageFileR
+   , imageFilePath
    )
 where
 
@@ -61,12 +60,6 @@ jpegQuality = 95
 imageFilePath :: ImageType -> String -> FilePath
 imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ show i ++ ".jpeg"
 
-
--- | serves an image file request
-getImageFileR :: ImageType -- ^ the image file type
-              -> String    -- ^ the image md5 hash
-              -> GHandler s a ()
-getImageFileR i s = sendFile typeJpeg $ imageFilePath i s
 
 toHex :: S.ByteString -> S.ByteString 
 toHex = S.concatMap word8ToHex
@@ -145,8 +138,8 @@ safeReadT Nothing  = Nothing
 
 -- | creates an image from the Exif and other bits moved out from newImage
 -- only to improve readabality
-getExif :: UserId -> String -> Text -> FilePath -> IO Image 
-getExif uid hash fn original = do
+getExif :: String -> Text -> FilePath -> IO Image 
+getExif hash fn original = do
    exif                      <- Exif.fromFile original
    make                      <- Exif.getTag exif "Make"
    model                     <- Exif.getTag exif "Model"
@@ -180,8 +173,7 @@ getExif uid hash fn original = do
    colorSpace                <- Exif.getTag exif "ColorSpace"
 
    return Image
-      { imageUserId                   = uid
-      , imageMd5Hash                  = T.pack hash
+      { imageMd5Hash                  = T.pack hash
       , imageOrigName                 = fn 
       , imageMake                     = make
       , imageModel                    = model
@@ -232,9 +224,8 @@ removeIfExist fp = fileExist fp >>= flip when (removeLink fp)
 -- | does everything needed from disk IO side to an image when it's
 -- uploaded. Does not raise exceptions.
 newImage :: FileInfo -- ^ The Yesod file info from the uploaded file 
-         -> UserId   -- ^ The current user from Yesod
          -> IO (Either SomeException (Int, Image))
-newImage f uid = do
+newImage f = do
    temp <- sinkToTemp f
    try (do
          hash <- md5Hash temp
@@ -245,7 +236,7 @@ newImage f uid = do
          fileExist original >>= flip when (throwIO MD5Exception)
 
          rename temp original
-         image <- getExif uid hash (fileName f) original
+         image <- getExif hash (fileName f) original
          nonModified <- GD.loadJpegFile original
 
          -- get the aspect ratio
