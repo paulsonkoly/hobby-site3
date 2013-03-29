@@ -1,0 +1,19 @@
+<h3>Editing image
+
+<div class="media">
+   <a href="@{ImageR imageId}" class="pull-left">
+      <img class="img-rounded" src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" alt="#{imageOrigName image}">
+   <div class="media-body">
+      <h4>Please read the followings before you edit any image
+      <ul>
+         <li><em>Public</em> accessibility : everyone can see the image
+         <li><em>Member</em> accessibility : site members can see the image
+         <li><em>Owner</em> accessibility : only the owner can see the image (administrator can see everything)
+      Accessibility rules only control who can <em>see</em> the image. Images can only be modified by their owner or an administrator.
+
+<form method="post" action="@{EditImageR imageId}" enctype="#{enctype}">
+   ^{imageFormWidget}
+   <button type="submit" class="btn btn-warning delete">
+      <i class="icon-ok-sign icon-white">
+      <span>Update
+

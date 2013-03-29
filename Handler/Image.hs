@@ -16,8 +16,6 @@ import Yesod.Auth
 import Yesod.Form.JQueryUpload
 
 import Data.Text (pack, unpack)
-import Data.Maybe
-import Data.String (IsString (..))
 import Control.Monad
 
 import Lib.Image

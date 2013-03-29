@@ -21,6 +21,7 @@ import Text.Hamlet (hamletFile)
 import System.Log.FastLogger (Logger)
 
 import Lib.ImageType
+import Lib.Accessibility
 
 import Control.Monad
 import Data.Maybe
@@ -96,6 +97,28 @@ isSelfOrAdmin uid = maybeAuthId >>= \maid -> if maid == Just uid
    else isAdmin 
 
 
+canAccess :: ImageId -> GHandler s App AuthResult
+canAccess imageId = do
+   maid <- maybeAuthId
+   image <- runDB $ get404 $ imageId
+   case imageAccessibility image of
+      Public -> return Authorized
+      Member -> isLoggedIn
+      Owner  -> if isJust maid && fromJust maid == imageUserId image
+         then return Authorized
+         else isAdmin
+
+
+isOwner :: ImageId -> GHandler s App AuthResult
+isOwner imageId = do
+   maid <- maybeAuthId
+   image <- runDB $ get404 $ imageId
+   if isJust maid && fromJust maid == imageUserId image
+      then return Authorized
+      else isAdmin
+
+
+
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
 instance Yesod App where
@@ -141,17 +164,17 @@ instance Yesod App where
     isAuthorized RobotsR     False = return Authorized
 
     -- route name, then a boolean indicating if it's a write request
-    isAuthorized UsersR              _ = isAdmin
-    isAuthorized (UserR uid)         _ = isSelfOrAdmin uid
-    isAuthorized (EditUserR uid)     _ = isSelfOrAdmin uid
-    isAuthorized (DeleteUserR _)     _ = isAdmin
+    isAuthorized UsersR                 _ = isAdmin
+    isAuthorized (UserR uid)            _ = isSelfOrAdmin uid
+    isAuthorized (EditUserR uid)        _ = isSelfOrAdmin uid
+    isAuthorized (DeleteUserR _)        _ = isAdmin
 
-    isAuthorized ImagesR             _ = return Authorized
-    isAuthorized (ImageR _)          _ = return Authorized
-    isAuthorized CreateImageR        _ = isLoggedIn 
-    isAuthorized (EditImageR _)      _ = return Authorized
-    isAuthorized (DeleteImageR _)    _ = return Authorized
-    isAuthorized (ImageFileR _ _)    _ = return Authorized
+    isAuthorized ImagesR                _ = return Authorized
+    isAuthorized (ImageR imageId)       _ = canAccess imageId
+    isAuthorized CreateImageR           _ = isLoggedIn 
+    isAuthorized (EditImageR imageId)   _ = isOwner imageId
+    isAuthorized (DeleteImageR imageId) _ = isOwner imageId 
+    isAuthorized (ImageFileR _ _)       _ = return Authorized
 
     -- default deny 
     isAuthorized _ _ = return
