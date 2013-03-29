@@ -16,6 +16,7 @@ import Yesod.Auth
 import Yesod.Form.JQueryUpload
 
 import Data.Text (pack, unpack)
+import Data.Maybe
 import Control.Monad
 
 import Lib.Image
@@ -37,14 +38,23 @@ imageForm image = renderDivs $ EditableImage
 
 getImagesR :: Handler RepHtml
 getImagesR = do
-	images <- runDB $ selectList [] []
-	defaultLayout $(widgetFile "images")
+   muser <- currentUserM
+   maid <- maybeAuthId
+   images <- runDB $ selectList 
+      ( case muser of
+         Just user -> if userAdmin user
+            then [] 
+            else [ImageAccessibility ==. Public]
+               ||. [ImageAccessibility ==. Member, ImageUserId ==. fromJust maid]
+         Nothing -> [ImageAccessibility ==. Public]
+      ) []
+   defaultLayout $(widgetFile "images")
 
 
 -- | serves an image file request
 getImageFileR :: ImageType -- ^ the image file type
               -> String    -- ^ the image md5 hash
-              -> GHandler s a ()
+              -> Handler ()
 getImageFileR i s = sendFile typeJpeg $ imageFilePath i s
 
 
@@ -86,8 +96,11 @@ postCreateImageR = do
 getImageR :: ImageId -> Handler RepHtml
 getImageR imageId = do
    image <- runDB $ get404 imageId
-   defaultLayout $ do
-      $(widgetFile "image")
+   maid <- maybeAuthId
+   muser <- currentUserM
+   let canEditDelete = (not $ isNothing maid)
+         && (userAdmin (fromJust muser) || fromJust maid == imageUserId image)
+   defaultLayout $(widgetFile "image")
 
 
 getEditImageR :: ImageId -> Handler RepHtml
