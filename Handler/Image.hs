@@ -72,7 +72,7 @@ postCreateImageR = do
    renderer <- getUrlRender
    jsonContent <- forM files $ \f -> do
          $(logDebug) $ "File upload request " <> fileName f
-         eitherImage <- liftIO $ newImage f
+         eitherImage <- liftIO $ mkImage f
          either
             (\errMsg -> return $ object [ "error" .= pack (show $ errMsg) ])
             (\image -> do

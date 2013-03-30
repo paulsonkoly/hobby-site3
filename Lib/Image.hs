@@ -1,12 +1,19 @@
 {-# LANGUAGE  DeriveDataTypeable #-}
+{- |
+Module      :  $Header$
+Description :  Functions related to IO during image upload
+Copyright   :  (c) Paul Sonkoly
+License     :  AllRightsReserved
 
------------------------------------------------------------------------
--- | Bunch of functions related to IO during image upload 
------------------------------------------------------------------------
+Maintainer  :  sonkoly.pal@gmail.com
+Stability   :  stable
+Portability :  portable
+-}
+
 module Lib.Image
    (
    -- * Functions
-     newImage
+     mkImage
    , deleteImage
    , imageFilePath
    )
@@ -20,6 +27,7 @@ import Control.Exception
 
 import System.IO
 import System.Posix.Files
+import System.Random
 import System.Locale
 
 import qualified Data.Text             as T
@@ -73,11 +81,14 @@ toHex = S.concatMap word8ToHex
       pad s   = s
 
 
--- | temporary file for sink. Temp race wouldn't matter here
--- but at least it's unique
+-- | temporary file for sink.
 sinkToTemp :: FileInfo -> IO FilePath
 sinkToTemp f = do
-   (temp, thandle) <- openTempFile "." "image_temp"
+   -- as it turns out openBinaryTempFile can generate the same
+   -- file name from multiple threads. That's why I just stick
+   -- a random bit at the front.
+   rand <- getStdRandom random
+   (temp, thandle) <- openBinaryTempFile "." $ "image_temp" ++ show (rand :: Int)
    runResourceT $ fileSource f $$ sinkHandle thandle
    hClose thandle
    return temp
@@ -136,8 +147,8 @@ safeReadT Nothing  = Nothing
 
 
 -- | creates an Image from Exif
-getExif :: String -> Text -> FilePath -> IO Image
-getExif hash fn original = do
+getExif :: FilePath -> IO Image
+getExif original = do
    exif                      <- Exif.fromFile original
    make                      <- Exif.getTag exif "Make"
    model                     <- Exif.getTag exif "Model"
@@ -173,8 +184,8 @@ getExif hash fn original = do
    return Image
       { imageUserId                   = undefined
       , imageAccessibility            = undefined
-      , imageMd5Hash                  = T.pack hash
-      , imageOrigName                 = fn 
+      , imageMd5Hash                  = undefined
+      , imageOrigName                 = undefined
       , imageMake                     = make
       , imageModel                    = model
       , imageXResolution              = safeRead xResolution
@@ -216,39 +227,42 @@ instance Show ImageException where
 
 instance Exception ImageException
 
-
+-- | removes a file if it exists, otherwise does nothing
 removeIfExist :: FilePath -> IO ()
 removeIfExist fp = fileExist fp >>= flip when (removeLink fp)
 
 
--- | does everything needed from disk IO side to an image when it's
--- uploaded. Does not raise exceptions.
-newImage :: FileInfo -- ^ The Yesod file info from the uploaded file 
+-- | generates the derivative images
+generateDerivatives :: FilePath -> String -> IO ()
+generateDerivatives fn hash = do
+   original <- GD.loadJpegFile fn
+   size <- GD.imageSize original
+   forM_ [ ( Thumbnail, thumbSize ) , ( Large, largeSize ) ] (\ (t, s) -> do
+      modJpeg <- uncurry GD.resizeImage (retainAspectRatio s size) original
+      GD.saveJpegFile jpegQuality (imageFilePath t hash) modJpeg)
+
+
+
+-- | Saves the image from the Yesod file info to the hard drive and generates derivative
+--   images.
+--
+-- Returns the pair of the image size and the Image, or SomeException if an exception was
+-- raised. Image has all Exif related fields and the hash and origName fields filled in.
+mkImage :: FileInfo -- ^ The Yesod file info from the uploaded file 
          -> IO (Either SomeException (Int, Image))
-newImage f = do
+mkImage f = try (do
    temp <- sinkToTemp f
-   try (do
-         hash <- md5Hash temp
-         size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
-
-         let original  = imageFilePath Original hash
-
-         fileExist original >>= flip when (throwIO MD5Exception)
-
-         rename temp original
-         image <- getExif hash (fileName f) original
-         nonModified <- GD.loadJpegFile original
-
-         -- get the aspect ratio
-         imageSize <- GD.imageSize nonModified
-
-         -- generate thumbnail, large
-         forM_ [ ( Thumbnail, thumbSize ) , ( Large, largeSize ) ] (\ (t, s) -> do
-            modJpeg <- uncurry GD.resizeImage (retainAspectRatio s imageSize) nonModified
-            GD.saveJpegFile jpegQuality (imageFilePath t hash) modJpeg)
-
-         return (size, image)
-      ) `finally` removeIfExist temp
+   (do
+      hash <- md5Hash temp
+      size <- liftM (fromIntegral . fileSize) $ getFileStatus temp
+      let original = imageFilePath Original hash
+      fileExist original >>= flip when (throwIO MD5Exception)
+      rename temp original
+      generateDerivatives original hash
+      image <- getExif original
+      return (size, image { imageMd5Hash = T.pack hash, imageOrigName = fileName f })
+      ) `finally` (removeIfExist temp)
+   )
 
 
 -- | Deletes all forms of the image from the hard drive.
