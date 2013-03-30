@@ -1,9 +1,17 @@
------------------------------------------------------------------------
--- | Different image file types.
---
--- This module provides a PathPiece instance where we can insert the
--- image type in the path of the image request in a type safe way.
------------------------------------------------------------------------
+{- |
+Module      :  $Header$
+Description :  Different image file types.
+Copyright   :  (c) Paul Sonkoly
+License     :  AllRightsReserved
+
+Maintainer  :  sonkoly.pal@gmail.com
+Stability   :  stable
+Portability :  portable
+
+This module provides a PathPiece instance where we can insert the
+image type in the path of the image request in a type safe way.
+-}
+
 
 module Lib.ImageType (ImageType (..)) where
 
@@ -13,10 +21,8 @@ import Text.Read
 import Data.Text
 import Web.PathPieces
 
------------------------------------------------------------------------
 -- | data type representing different formats saved on the disk of the
 --   same image 
------------------------------------------------------------------------
 data ImageType
    = Thumbnail -- ^ type for the thumbnail size image variant
    | Large     -- ^ type for the large size image variant

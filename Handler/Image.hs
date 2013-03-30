@@ -27,10 +27,10 @@ import Lib.Accessibility
 data EditableImage = EditableImage { accessibility :: Accessibility }
 
 
---imageForm :: ( RenderMessage master FormMessage)
---   => Image
---   -> Text.Blaze.Internal.Markup
---   -> MForm sub master (FormResult EditableImage, GWidget sub master ())
+imageForm :: RenderMessage master FormMessage
+          => Image
+          -> Html 
+          -> MForm sub master (FormResult EditableImage, GWidget sub master ())
 imageForm image = renderDivs $ EditableImage
    <$> areq (selectField optionsEnum) "Accessibility" (Just $ imageAccessibility image)
 

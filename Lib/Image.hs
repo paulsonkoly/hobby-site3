@@ -135,10 +135,8 @@ safeReadT (Just s) = TF.parseTime defaultTimeLocale "%Y:%m:%d %T" s
 safeReadT Nothing  = Nothing
 
 
-
--- | creates an image from the Exif and other bits moved out from newImage
--- only to improve readabality
-getExif :: String -> Text -> FilePath -> IO Image 
+-- | creates an Image from Exif
+getExif :: String -> Text -> FilePath -> IO Image
 getExif hash fn original = do
    exif                      <- Exif.fromFile original
    make                      <- Exif.getTag exif "Make"
@@ -173,7 +171,9 @@ getExif hash fn original = do
    colorSpace                <- Exif.getTag exif "ColorSpace"
 
    return Image
-      { imageMd5Hash                  = T.pack hash
+      { imageUserId                   = undefined
+      , imageAccessibility            = undefined
+      , imageMd5Hash                  = T.pack hash
       , imageOrigName                 = fn 
       , imageMake                     = make
       , imageModel                    = model
