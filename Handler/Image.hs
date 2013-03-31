@@ -13,15 +13,40 @@ where
 import Import
 
 import Yesod.Auth
-import Yesod.Form.JQueryUpload
 
 import Data.Text (pack, unpack)
+
 import Data.Maybe
 import Control.Monad
 
 import Lib.Image
 import Lib.ImageType
 import Lib.Accessibility
+
+
+jQUploadWidget :: Widget
+jQUploadWidget = do
+   addStylesheet $ StaticR css_fileupload_jquery_fileupload_ui_css
+   addStylesheet $ StaticR css_fileupload_style_css
+   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+   addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
+   addScript $ StaticR js_fileupload_load_image_js
+   addScript $ StaticR js_fileupload_tmpl_js
+   addScript $ StaticR js_fileupload_canvas_to_blob_js
+   addScript $ StaticR js_fileupload_tmpl_js
+   addScript $ StaticR js_fileupload_jquery_ui_widget_js
+   -- The Iframe Transport is required for browsers without support for XHR file uploads
+   addScript $ StaticR js_fileupload_jquery_iframe_transport_js
+   -- The basic File Upload plugin
+   addScript $ StaticR js_fileupload_jquery_fileupload_js
+   -- The File Upload file processing plugin
+   addScript $ StaticR js_fileupload_jquery_fileupload_fp_js
+   -- The File Upload user interface plugin
+   addScript $ StaticR js_fileupload_jquery_fileupload_ui_js
+   -- The main application script
+   addScript $ StaticR js_fileupload_main_js
+   $(widgetFile "uploadWidget")
+
 
 
 data EditableImage = EditableImage { accessibility :: Accessibility }
