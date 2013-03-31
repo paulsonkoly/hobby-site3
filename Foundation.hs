@@ -174,7 +174,13 @@ instance Yesod App where
     isAuthorized CreateImageR           _ = isLoggedIn 
     isAuthorized (EditImageR imageId)   _ = isOwner imageId
     isAuthorized (DeleteImageR imageId) _ = isOwner imageId 
+    -- the protection here is that the user can't guess the md5 from the route
+    -- thus if we receive a request with good md5 we let it through, otherwise
+    -- 404. This way we don't have to look up the database.
     isAuthorized (ImageFileR _ _)       _ = return Authorized
+
+    isAuthorized GalleriesR             _ = return Authorized
+    isAuthorized NewGalleryR            _ = isLoggedIn
 
     -- default deny 
     isAuthorized _ _ = return

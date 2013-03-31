@@ -1,3 +1,5 @@
+-- By default this file is used in Model.hs (which is imported by Foundation.hs)
+
 User
    name  Text Eq
    hash  Text
@@ -42,4 +44,11 @@ Image
    colorSpace               String   Maybe
    UniqueImage              md5Hash
 
- -- By default this file is used in Model.hs (which is imported by Foundation.hs)
+Gallery
+   userId                   UserId
+   name                     String
+   description              Text     Maybe
+   parentId                 GalleryId Maybe
+   weight                   Int64
+   UniqueGallery            name
+

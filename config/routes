@@ -17,3 +17,6 @@
 /image/#ImageId            ImageR          GET
 /image/#ImageId/edit       EditImageR      GET POST
 /image/#ImageId/del        DeleteImageR    POST
+
+/galleries                 GalleriesR      GET
+/gallery/new               NewGalleryR     GET POST

@@ -22,6 +22,7 @@ library
                      Handler.Home
                      Handler.User
                      Handler.Image
+                     Handler.Gallery
                      Lib.Image
                      Lib.ImageType
                      Lib.Accessibility
