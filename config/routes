@@ -19,9 +19,11 @@
 /image/#ImageId/del                 DeleteImageR     POST
 
 /galleries                          GalleriesR       GET
+/gallerytree                        GalleryTreeR     GET
 /gallery/new                        NewGalleryR      GET POST
 /gallery/#GalleryId/new             NewChildGalleryR GET
 /gallery/#GalleryId/edit            EditGalleryR     GET POST
 /gallery/#GalleryId/move/#GalleryId MoveGalleryR     POST
+/gallery/#GalleryId/movetop         MoveTopGalleryR  POST
 /gallery/#GalleryId/del             DeleteGalleryR   POST
 

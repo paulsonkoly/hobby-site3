@@ -3,7 +3,10 @@ $(function(){
       persist: true,
       checkbox: true,
       selectMode: 2,
-      children: #{galleriesAeson}
+      initAjax: {
+         url: "@{GalleryTreeR}",
+         data: {}
+      }
    });
 });
 
@@ -33,9 +36,23 @@ function moveSelected() {
             url: "/gallery/" + selected[i].data.key + "/move/" + focused.data.key,
             type: "post"
          }).done(function ( data ) {
-            // alert(data["message"]);
+            $("#tree").dynatree("getTree").reload();
+            if (data.message != null) {
+               $("#main").prepend('<div id="#message" class="alert alert-warning">' + data.message + '</div>');
+            }
          });
       }
+   }
+}
+
+
+function moveTopSelected() {
+   selected = $("#tree").dynatree("getSelectedNodes");
+   for (i = 0; i < selected.length; i++) {
+      $.ajax({
+         url: "/gallery/" + selected[i].data.key + "/movetop",
+         type: "post"
+      }).done(function ( data ) { $("#tree").dynatree("getTree").reload(); });
    }
 }
 
@@ -47,7 +64,7 @@ function deleteSelected() {
          url: "/gallery/" + objects[i].data.key + "/del",
          type: "post"
       }).done(function ( data ) {
-         // alert(data["message"]);
+         $("#tree").dynatree("getTree").reload();
       });
    }
 };

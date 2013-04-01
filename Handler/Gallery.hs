@@ -1,11 +1,13 @@
 module Handler.Gallery
    ( getGalleriesR
+   , getGalleryTreeR
    , getNewGalleryR
    , postNewGalleryR
    , getNewChildGalleryR
    , getEditGalleryR
    , postEditGalleryR
    , postMoveGalleryR
+   , postMoveTopGalleryR
    , postDeleteGalleryR
    )
 where
@@ -18,6 +20,7 @@ import Text.Lucius
 import Text.Julius
 import Control.Monad
 import Data.Int
+import Data.Maybe
 
 
 -- | Turns the in database gallery structure (forest) into an aeson Value.
@@ -41,8 +44,14 @@ galleryTreeAeson = do
             ]
 
 
-treeWidget :: Value -> Widget
-treeWidget galleriesAeson = do 
+-- | Serves the AJAX request to the gallery tree view widget
+getGalleryTreeR :: Handler RepJson
+getGalleryTreeR = galleryTreeAeson >>= jsonToRepJson
+
+
+-- | Gallery tree view widget
+treeWidget :: Widget
+treeWidget = do 
    addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
    addScript (StaticR js_dynatree_jquery_ui_custom_js)
    addScript (StaticR js_dynatree_jquery_cookie_js)
@@ -52,14 +61,15 @@ treeWidget galleriesAeson = do
    $(widgetFile "treeWidget")
 
 
+-- | Browse or manage galleries.
 getGalleriesR :: Handler RepHtml
 getGalleriesR = do
-   galleriesAeson <- galleryTreeAeson
    defaultLayout $ do
       setTitle "Image galleries"
       $(widgetFile "galleries")
 
 
+-- | Fields that we can edit on a Gallery
 data EditableGallery = EditableGallery
    { name        :: Text
    , description :: Maybe Text
@@ -68,7 +78,7 @@ data EditableGallery = EditableGallery
    } deriving Eq
 
 
--- | form for an image gallery
+-- | Form for an image gallery
 -- galleryForm :: Maybe Gallery -> Html -> Form EditableGallery
 galleryForm mgallery mparentId = renderDivs $ EditableGallery
       <$> areq textField "Name"        (Just $ maybe "" galleryName mgallery)
@@ -77,11 +87,15 @@ galleryForm mgallery mparentId = renderDivs $ EditableGallery
       <*> areq intField "Weigth"       (Just $ maybe 0 galleryWeight mgallery)
 
 
+-- | Gallery creation form for a top level gallery.
 getNewGalleryR :: Handler RepHtml
 getNewGalleryR = getNewGalleryR' Nothing
 
 
-getNewChildGalleryR :: GalleryId -> Handler RepHtml
+-- | Gallery creation form for a gallery under the specified parent
+getNewChildGalleryR
+   :: GalleryId       -- ^ The parent gallery
+   -> Handler RepHtml
 getNewChildGalleryR = getNewGalleryR' . Just
 
 
@@ -95,6 +109,7 @@ getNewGalleryR' mparentId = do
       $(widgetFile "galleryForm")
 
 
+-- | Gallery creation POST handler
 postNewGalleryR :: Handler RepHtml
 postNewGalleryR = do
    Just authId <- maybeAuthId
@@ -118,6 +133,7 @@ postNewGalleryR = do
          $(widgetFile "galleryForm")
 
 
+-- | Edit form for a gallery
 getEditGalleryR :: GalleryId -> Handler RepHtml
 getEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
@@ -129,6 +145,7 @@ getEditGalleryR galleryId = do
       $(widgetFile "galleryForm")
 
 
+-- | Gallery edit POST handler
 postEditGalleryR :: GalleryId -> Handler RepHtml
 postEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
@@ -150,17 +167,54 @@ postEditGalleryR galleryId = do
          $(widgetFile "galleryForm")
 
 
+-- | Would it cause a cycle if we moved 'what' under 'whereTo'
+detectCycle
+   :: GalleryId       -- ^ 'what', the gallery to be moved
+   -> Maybe GalleryId -- ^ 'whereTo', Maybe the destination gallery
+   -> Handler Bool
+detectCycle what (Just whereTo) = do
+   if what == whereTo
+      then return True
+      else do
+         self <- runDB $ get whereTo
+         let up = galleryParentId $ fromJust self
+         detectCycle what up
+detectCycle _ Nothing = return False
+
+
+-- | Gallery move POST handler
+-- 
+-- We should refuse creating cycles in the paretial relations of galleries.
 postMoveGalleryR :: GalleryId -> GalleryId -> Handler RepJson
 postMoveGalleryR what whereTo = do
-   runDB $ update what [ GalleryParentId =. Just whereTo ]
-   jsonToRepJson $ object $ [ "message" .= ("Gallery has been moved." :: Text) ]
+   cyclic <- detectCycle what (Just whereTo)
+   response <- if cyclic 
+      then return $ object $ [ "message" .= ("Cannot create a cycle in parential relations." :: Text) ]
+      else do
+         runDB $ update what [ GalleryParentId =. Just whereTo ]
+         return $ toJSON ()
+   jsonToRepJson response 
 
 
+-- | Gallery move to the top POST handler
+postMoveTopGalleryR :: GalleryId -> Handler RepJson
+postMoveTopGalleryR what = do
+   runDB $ update what [ GalleryParentId =. Nothing ]
+   jsonToRepJson $ toJSON ()
+
+
+deleteGallery :: GalleryId -> Handler ()
+deleteGallery galleryId = do
+   children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] []
+   mapM_ (deleteGallery . entityKey) children
+   runDB $ delete galleryId
+
+
+-- | Handles gallery deletion requests.
+--
+-- TODO : Does not give any status information
 postDeleteGalleryR :: GalleryId -> Handler RepJson
 postDeleteGalleryR galleryId = do
-   mgallery <- runDB $ get galleryId
-   _ <- runDB $ delete galleryId
-   jsonToRepJson $ object $ case mgallery of
-      Just gallery -> [ "message" .= ("Gallery " <> galleryName gallery <> " has been deleted.") ]
-      Nothing -> [ "message" .= ("Not found." :: Text) ]
+   deleteGallery galleryId
+   jsonToRepJson $ toJSON ()
 

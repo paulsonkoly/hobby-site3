@@ -183,10 +183,12 @@ instance Yesod App where
     -- XXX SORT OUT THE PERMISSIONS !!!!!!!!!!!!!!!!!!!!!!!!! --
     ------------------------------------------------------------
     isAuthorized GalleriesR             _ = return Authorized
+    isAuthorized GalleryTreeR           _ = isLoggedIn
     isAuthorized NewGalleryR            _ = isLoggedIn
     isAuthorized (NewChildGalleryR _)   _ = isLoggedIn
     isAuthorized (EditGalleryR _)       _ = isLoggedIn
     isAuthorized (MoveGalleryR _ _)     _ = isLoggedIn
+    isAuthorized (MoveTopGalleryR _)    _ = isLoggedIn
     isAuthorized (DeleteGalleryR _)     _ = isLoggedIn
 
     -- default deny 
