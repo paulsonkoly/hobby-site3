@@ -17,6 +17,11 @@ import Lib.Accessibility
 share [mkPersist sqlOnlySettings, mkMigrate "migrateAll"]
     $(persistFileWith lowerCaseSettings "config/models")
 
+
+instance Eq Gallery where
+   (==) a b = (galleryName a == galleryName b)
+
+
 instance HDB.HashDBUser (User) where
   userPasswordHash = Just . userHash
   userPasswordSalt = Just . userSalt 

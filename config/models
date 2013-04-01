@@ -1,7 +1,7 @@
 -- By default this file is used in Model.hs (which is imported by Foundation.hs)
 
 User
-   name  Text Eq
+   name  Text
    hash  Text
    salt  Text
    admin Bool
@@ -45,9 +45,9 @@ Image
    UniqueImage              md5Hash
 
 Gallery
+   name                     Text
    userId                   UserId
-   name                     String
-   description              Text     Maybe
+   description              Text      Maybe
    parentId                 GalleryId Maybe
    weight                   Int64
    UniqueGallery            name

@@ -1,0 +1,6 @@
+<div class="btn-group">
+   <a class="btn btn-primary" href="@{NewGalleryR}">
+      <i class="icon-plus icon-white">
+      <span>New
+
+^{treeWidget galleriesAeson}

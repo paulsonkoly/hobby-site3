@@ -6,12 +6,18 @@ module Handler.Gallery
 where
 
 import Import
+
+import Yesod.Auth
+--import Yesod.Form.Fields
+
 import Text.Lucius
-import Text.Julius
-import Data.Monoid
-import Data.Aeson.Types
-import Data.Text (unpack)
+--import Text.Julius
+--import Data.Monoid
+--import Data.Aeson.Types
+--import Data.Text (unpack)
 import Control.Monad
+import Data.Int
+-- import Data.Maybe
 
 
 -- | Turns the in database gallery structure (forest) into an aeson Value.
@@ -27,9 +33,10 @@ galleryTreeAeson = do
          children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] [Asc GalleryWeight]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ Import.object
-            [ "title"    .= galleryName gallery
-            , "isFolder" .= True
-            , "children" .= childrenAeson
+            [ "title"      .= galleryName gallery
+            , "tooltip"    .= galleryDescription gallery
+            , "isFolder"   .= True
+            , "children"   .= childrenAeson
             ]
 
 
@@ -41,6 +48,8 @@ treeWidgetScript galleriesAeson = toWidget $ [julius|
                alert("You activated " + node.data.title);
             },
             persist: true,
+            checkbox: true,
+            selectMode: 3,
             children: #{galleriesAeson}
          });
       });
@@ -61,11 +70,55 @@ treeWidget galleriesAeson = do
 getGalleriesR :: Handler RepHtml
 getGalleriesR = do
    galleriesAeson <- galleryTreeAeson
-   defaultLayout $ toWidget [whamlet|<h1>Galleries:</h1>^{treeWidget galleriesAeson}|]
+   defaultLayout $ do
+      setTitle "Image galleries"
+      $(widgetFile "galleries")
+
+
+data EditableGallery = EditableGallery
+   { name        :: Text
+   , description :: Maybe Text
+   , parent      :: Maybe (Entity Gallery)
+   , weight      :: Int64
+   } deriving Eq
+
+
+-- | form for an image gallery
+-- galleryForm :: Maybe Gallery -> Html -> Form EditableGallery
+galleryForm mgallery = renderDivs $ EditableGallery
+   <$> areq textField "Name" (Just $ maybe "" galleryName mgallery)
+   <*> aopt textField "Description" (liftM galleryDescription mgallery)
+   <*> aopt parentField "Parent gallery" Nothing
+   <*> areq intField "Weigth" (Just $ maybe 0 galleryWeight mgallery)
+   where
+      parentOptions = optionsPersist [] [Desc GalleryWeight] galleryName
+      parentField = selectField parentOptions
 
 
 getNewGalleryR :: Handler RepHtml
-getNewGalleryR = notFound
+getNewGalleryR = do
+   (galleryWidget, enctype) <- generateFormPost $ galleryForm Nothing
+   defaultLayout $ do
+      setTitle "Creating a new gallery"
+      $(widgetFile "galleryForm")
+
 
 postNewGalleryR :: Handler RepHtml
-postNewGalleryR = notFound
+postNewGalleryR = do
+   Just authId <- maybeAuthId
+   ((res, galleryWidget), enctype) <- runFormPost $ galleryForm Nothing
+   case res of 
+      FormSuccess editable -> do
+         _ <- runDB $ insert $ Gallery
+            { galleryName = name editable
+            , galleryUserId = authId
+            , galleryDescription = description editable
+            , galleryParentId = liftM entityKey $ parent editable
+            , galleryWeight = weight editable
+            }
+         setMessage $ toHtml ("The gallery has successfully been created." :: Text)
+         redirect $ GalleriesR
+      _ -> defaultLayout $ do
+         setTitle "Please correct your form"
+         $(widgetFile "galleryForm")
+
