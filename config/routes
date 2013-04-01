@@ -6,17 +6,22 @@
 
 / HomeR GET POST
 
-/users                     UsersR          GET POST
-/user/#UserId              UserR           GET
-/user/#UserId/edit         EditUserR       GET 
-/user/#UserId/del          DeleteUserR     POST
-                          
-/images                    ImagesR         GET
-/images/create             CreateImageR    GET POST
-/images/#ImageType/#String ImageFileR      GET
-/image/#ImageId            ImageR          GET
-/image/#ImageId/edit       EditImageR      GET POST
-/image/#ImageId/del        DeleteImageR    POST
+/users                              UsersR           GET POST
+/user/#UserId                       UserR            GET
+/user/#UserId/edit                  EditUserR        GET 
+/user/#UserId/del                   DeleteUserR      POST
 
-/galleries                 GalleriesR      GET
-/gallery/new               NewGalleryR     GET POST
+/images                             ImagesR          GET
+/images/create                      CreateImageR     GET POST
+/images/#ImageType/#String          ImageFileR       GET
+/image/#ImageId                     ImageR           GET
+/image/#ImageId/edit                EditImageR       GET POST
+/image/#ImageId/del                 DeleteImageR     POST
+
+/galleries                          GalleriesR       GET
+/gallery/new                        NewGalleryR      GET POST
+/gallery/#GalleryId/new             NewChildGalleryR GET
+/gallery/#GalleryId/edit            EditGalleryR     GET POST
+/gallery/#GalleryId/move/#GalleryId MoveGalleryR     POST
+/gallery/#GalleryId/del             DeleteGalleryR   POST
+

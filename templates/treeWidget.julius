@@ -1,0 +1,53 @@
+$(function(){
+   $("#tree").dynatree({
+      persist: true,
+      checkbox: true,
+      selectMode: 2,
+      children: #{galleriesAeson}
+   });
+});
+
+
+function newUnderFocused() {
+   object = $("#tree").dynatree("getActiveNode");
+   if (object != null) {
+      window.location.href = "/gallery/" + object.data.key + "/new";
+   }
+}
+
+
+function editFocused() {
+   object = $("#tree").dynatree("getActiveNode");
+   if (object != null) {
+      window.location.href = "/gallery/" + object.data.key + "/edit";
+   }
+}
+
+
+function moveSelected() {
+   focused = $("#tree").dynatree("getActiveNode");
+   selected = $("#tree").dynatree("getSelectedNodes");
+   if (focused != null) {
+      for (i = 0; i < selected.length; i++) {
+          $.ajax({
+            url: "/gallery/" + selected[i].data.key + "/move/" + focused.data.key,
+            type: "post"
+         }).done(function ( data ) {
+            // alert(data["message"]);
+         });
+      }
+   }
+}
+
+
+function deleteSelected() {
+   objects = $("#tree").dynatree("getSelectedNodes");
+   for (i = 0; i < objects.length; i++) {
+      $.ajax({
+         url: "/gallery/" + objects[i].data.key + "/del",
+         type: "post"
+      }).done(function ( data ) {
+         // alert(data["message"]);
+      });
+   }
+};

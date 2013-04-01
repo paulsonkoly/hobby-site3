@@ -22,6 +22,13 @@ instance Eq Gallery where
    (==) a b = (galleryName a == galleryName b)
 
 
+instance (PathPiece t) => PathPiece (Maybe t) where
+   toPathPiece (Just galleryId) = toPathPiece galleryId
+   toPathPiece Nothing          = "nothing"
+   fromPathPiece "nothing"      = Nothing
+   fromPathPiece text           = Just $ fromPathPiece $ text
+
+
 instance HDB.HashDBUser (User) where
   userPasswordHash = Just . userHash
   userPasswordSalt = Just . userSalt 

@@ -3,10 +3,10 @@
 $if canEditDelete
    <form method="post" action="@{DeleteImageR imageId}" class="form-inline">
       <div class="btn-group">
+         <a class="btn" href="@{EditImageR imageId}">
+            <i class="icon-edit">
+            <span>Edit
          <button type="submit" class="btn btn-danger delete">
             <i class="icon-trash icon-white">
             <span>Delete
 
-         <a class="btn btn-primary" href="@{EditImageR imageId}">
-            <i class="icon-edit icon-white">
-            <span>Edit

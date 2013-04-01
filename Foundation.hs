@@ -179,8 +179,15 @@ instance Yesod App where
     -- 404. This way we don't have to look up the database.
     isAuthorized (ImageFileR _ _)       _ = return Authorized
 
+    ------------------------------------------------------------
+    -- XXX SORT OUT THE PERMISSIONS !!!!!!!!!!!!!!!!!!!!!!!!! --
+    ------------------------------------------------------------
     isAuthorized GalleriesR             _ = return Authorized
     isAuthorized NewGalleryR            _ = isLoggedIn
+    isAuthorized (NewChildGalleryR _)   _ = isLoggedIn
+    isAuthorized (EditGalleryR _)       _ = isLoggedIn
+    isAuthorized (MoveGalleryR _ _)     _ = isLoggedIn
+    isAuthorized (DeleteGalleryR _)     _ = isLoggedIn
 
     -- default deny 
     isAuthorized _ _ = return
