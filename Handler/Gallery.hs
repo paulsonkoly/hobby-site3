@@ -33,7 +33,7 @@ galleryTreeAeson = do
    top <- runDB $ selectList [GalleryParentId ==. Nothing] [Asc GalleryWeight]
    liftM toJSON $ mapM galleryTreeAeson' top 
    where
-      galleryTreeAeson' :: (Entity Gallery) -> Handler Value
+      galleryTreeAeson' :: Entity Gallery -> Handler Value
       galleryTreeAeson' (Entity galleryId gallery) = do
          children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] [Asc GalleryWeight]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
@@ -65,10 +65,9 @@ treeWidget = do
 
 -- | Browse or manage galleries.
 getGalleriesR :: Handler RepHtml
-getGalleriesR = do
-   defaultLayout $ do
-      setTitle "Image galleries"
-      $(widgetFile "galleries")
+getGalleriesR = defaultLayout $ do
+   setTitle "Image galleries"
+   $(widgetFile "galleries")
 
 
 -- | Fields that we can edit on a Gallery
@@ -93,12 +92,36 @@ sensibleTextarea w =
 
 
 -- | Form for an image gallery
--- galleryForm :: Maybe Gallery -> Html -> Form EditableGallery
+galleryForm :: (RenderMessage master FormMessage, YesodNic master)
+   => Maybe Gallery   -- ^ gallery for default values
+   -> Maybe GalleryId -- ^ parentId to be passed in a hidden field
+   -> Html -> MForm sub master (FormResult EditableGallery, GWidget sub master ())
 galleryForm mgallery mparentId = renderDivs $ EditableGallery
       <$> areq textField "Name"        (Just $ maybe "" galleryName mgallery)
       <*> aopt nicHtmlField "Description" (liftM galleryDescription mgallery)
       <*> aopt hiddenField ""          (Just mparentId)
       <*> areq intField "Weigth"       (Just $ maybe 0 galleryWeight mgallery)
+
+
+generateGalleryForm :: Maybe Gallery -> Maybe GalleryId -> Handler (Widget, Enctype)
+generateGalleryForm mgallery mparentId = do
+   (galleryWidget, enctype) <- generateFormPost $ galleryForm mgallery mparentId
+   return (sensibleTextarea galleryWidget, enctype)
+
+
+runGalleryForm ::  Maybe Gallery -> Handler ((FormResult EditableGallery, Widget), Enctype)
+runGalleryForm mgallery = do
+   ((res, galleryWidget), enctype) <- runFormPost $ galleryForm mgallery Nothing
+   return ((res, sensibleTextarea galleryWidget), enctype)
+
+
+formHandler :: Widget -> Enctype -> Html -> Route App -> Handler RepHtml
+formHandler galleryWidget enctype title route = do
+   renderer <- getUrlRender
+   defaultLayout $ do
+      setTitle title 
+      let destination = renderer route
+      $(widgetFile "galleryForm")
 
 
 -- | Gallery creation form for a top level gallery.
@@ -115,25 +138,18 @@ getNewChildGalleryR = getNewGalleryR' . Just
 
 getNewGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getNewGalleryR' mparentId = do
-   (galleryWidget', enctype) <- generateFormPost $ galleryForm Nothing mparentId
-   let galleryWidget = sensibleTextarea galleryWidget'
-   renderer <- getUrlRender
-   defaultLayout $ do
-      setTitle "Creating a new gallery"
-      let destination = renderer NewGalleryR
-      $(widgetFile "galleryForm")
+   (galleryWidget, enctype) <- generateGalleryForm Nothing mparentId
+   formHandler galleryWidget enctype "Creating a new gallery" NewGalleryR
 
 
 -- | Gallery creation POST handler
 postNewGalleryR :: Handler RepHtml
 postNewGalleryR = do
    Just authId <- maybeAuthId
-   renderer <- getUrlRender
-   ((res, galleryWidget'), enctype) <- runFormPost $ galleryForm Nothing Nothing
-   let galleryWidget = sensibleTextarea galleryWidget'
+   ((res, galleryWidget), enctype) <- runGalleryForm Nothing
    case res of 
       FormSuccess editable -> do
-         _ <- runDB $ insert $ Gallery
+         _ <- runDB $ insert Gallery
             { galleryName = name editable
             , galleryUserId = authId
             , galleryDescription = description editable
@@ -141,34 +157,23 @@ postNewGalleryR = do
             , galleryWeight = weight editable
             }
          setMessage $ toHtml ("The gallery has successfully been created." :: Text)
-         redirect $ GalleriesR
-      _ -> defaultLayout $ do
-         setTitle "Creating a new gallery"
---         setMessage "Please correct your form"
-         let destination = renderer NewGalleryR
-         $(widgetFile "galleryForm")
+         redirect GalleriesR
+      _ -> formHandler galleryWidget enctype "Creating a new gallery" NewGalleryR
 
 
 -- | Edit form for a gallery
 getEditGalleryR :: GalleryId -> Handler RepHtml
 getEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
-   renderer <- getUrlRender
-   (galleryWidget', enctype) <- generateFormPost $ galleryForm (Just gallery) Nothing
-   let galleryWidget = sensibleTextarea galleryWidget'
-   defaultLayout $ do
-      setTitle $ "Edit gallery"
-      let destination = renderer $ EditGalleryR galleryId
-      $(widgetFile "galleryForm")
+   (galleryWidget, enctype) <- generateGalleryForm (Just gallery) Nothing
+   formHandler galleryWidget enctype "Edit gallery" (EditGalleryR galleryId)
 
 
 -- | Gallery edit POST handler
 postEditGalleryR :: GalleryId -> Handler RepHtml
 postEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
-   renderer <- getUrlRender
-   ((res, galleryWidget'), enctype) <- runFormPost $ galleryForm (Just gallery) Nothing
-   let galleryWidget = sensibleTextarea galleryWidget'
+   ((res, galleryWidget), enctype) <- runGalleryForm (Just gallery)
    case res of 
       FormSuccess editable -> do
          runDB $ update galleryId
@@ -177,12 +182,8 @@ postEditGalleryR galleryId = do
             , GalleryWeight =. weight editable
             ]
          setMessage $ toHtml $ "The gallery " <> name editable <> " has successfully been updated."
-         redirect $ GalleriesR
-      _ -> defaultLayout $ do
-         setTitle "Edit gallery"
---         setMessage $ toHtml "Please correct your form"
-         let destination = renderer $ EditGalleryR galleryId
-         $(widgetFile "galleryForm")
+         redirect GalleriesR
+      _ -> formHandler galleryWidget enctype "Edit gallery" $ EditGalleryR galleryId
 
 
 -- | Would it cause a cycle if we moved 'what' under 'whereTo'
@@ -190,13 +191,12 @@ detectCycle
    :: GalleryId       -- ^ 'what', the gallery to be moved
    -> Maybe GalleryId -- ^ 'whereTo', Maybe the destination gallery
    -> Handler Bool
-detectCycle what (Just whereTo) = do
-   if what == whereTo
-      then return True
-      else do
-         self <- runDB $ get whereTo
-         let up = galleryParentId $ fromJust self
-         detectCycle what up
+detectCycle what (Just whereTo) = if what == whereTo
+   then return True
+   else do
+      self <- runDB $ get whereTo
+      let up = galleryParentId $ fromJust self
+      detectCycle what up
 detectCycle _ Nothing = return False
 
 
@@ -207,7 +207,7 @@ postMoveGalleryR :: GalleryId -> GalleryId -> Handler RepJson
 postMoveGalleryR what whereTo = do
    cyclic <- detectCycle what (Just whereTo)
    response <- if cyclic 
-      then return $ object $ [ "message" .= ("Cannot create a cycle in parential relations." :: Text) ]
+      then return $ object [ "message" .= ("Cannot create a cycle in parential relations." :: Text) ]
       else do
          runDB $ update what [ GalleryParentId =. Just whereTo ]
          return $ toJSON ()
