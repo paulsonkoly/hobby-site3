@@ -89,6 +89,7 @@ library
                  , time
                  , old-locale
                  , path-pieces
+                 , blaze-html
 
 executable         hobby-site3
     if flag(library-only)

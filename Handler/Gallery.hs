@@ -15,9 +15,11 @@ where
 import Import
 
 import Yesod.Auth
+import Yesod.Form.Nic
 
 import Text.Lucius
 import Text.Julius
+import Text.Blaze.Html.Renderer.Text
 import Control.Monad
 import Data.Int
 import Data.Maybe
@@ -37,7 +39,7 @@ galleryTreeAeson = do
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ Import.object
             [ "title"      .= galleryName gallery
-            , "tooltip"    .= galleryDescription gallery
+            , "tooltip"    .= liftM renderHtml (galleryDescription gallery)
             , "isFolder"   .= True
             , "children"   .= childrenAeson
             , "key"        .= galleryId
@@ -72,17 +74,29 @@ getGalleriesR = do
 -- | Fields that we can edit on a Gallery
 data EditableGallery = EditableGallery
    { name        :: Text
-   , description :: Maybe Text
+   , description :: Maybe Html
    , parentId    :: Maybe GalleryId
    , weight      :: Int64
-   } deriving Eq
+   } 
+
+
+instance Eq EditableGallery where 
+   (==) a b = name a == name b
+
+
+-- | Adds sesnible size to textareas in a widget
+--
+-- Without this the nicHtml looks awful
+sensibleTextarea :: Widget -> Widget
+sensibleTextarea w = 
+   toWidget [lucius| textarea { width: 600px; height: 200px; } |] <> w
 
 
 -- | Form for an image gallery
 -- galleryForm :: Maybe Gallery -> Html -> Form EditableGallery
 galleryForm mgallery mparentId = renderDivs $ EditableGallery
       <$> areq textField "Name"        (Just $ maybe "" galleryName mgallery)
-      <*> aopt textField "Description" (liftM galleryDescription mgallery)
+      <*> aopt nicHtmlField "Description" (liftM galleryDescription mgallery)
       <*> aopt hiddenField ""          (Just mparentId)
       <*> areq intField "Weigth"       (Just $ maybe 0 galleryWeight mgallery)
 
@@ -101,7 +115,8 @@ getNewChildGalleryR = getNewGalleryR' . Just
 
 getNewGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getNewGalleryR' mparentId = do
-   (galleryWidget, enctype) <- generateFormPost $ galleryForm Nothing mparentId
+   (galleryWidget', enctype) <- generateFormPost $ galleryForm Nothing mparentId
+   let galleryWidget = sensibleTextarea galleryWidget'
    renderer <- getUrlRender
    defaultLayout $ do
       setTitle "Creating a new gallery"
@@ -114,7 +129,8 @@ postNewGalleryR :: Handler RepHtml
 postNewGalleryR = do
    Just authId <- maybeAuthId
    renderer <- getUrlRender
-   ((res, galleryWidget), enctype) <- runFormPost $ galleryForm Nothing Nothing
+   ((res, galleryWidget'), enctype) <- runFormPost $ galleryForm Nothing Nothing
+   let galleryWidget = sensibleTextarea galleryWidget'
    case res of 
       FormSuccess editable -> do
          _ <- runDB $ insert $ Gallery
@@ -138,7 +154,8 @@ getEditGalleryR :: GalleryId -> Handler RepHtml
 getEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
    renderer <- getUrlRender
-   (galleryWidget, enctype) <- generateFormPost $ galleryForm (Just gallery) Nothing
+   (galleryWidget', enctype) <- generateFormPost $ galleryForm (Just gallery) Nothing
+   let galleryWidget = sensibleTextarea galleryWidget'
    defaultLayout $ do
       setTitle $ "Edit gallery"
       let destination = renderer $ EditGalleryR galleryId
@@ -150,7 +167,8 @@ postEditGalleryR :: GalleryId -> Handler RepHtml
 postEditGalleryR galleryId = do
    gallery <- runDB $ get404 galleryId
    renderer <- getUrlRender
-   ((res, galleryWidget), enctype) <- runFormPost $ galleryForm (Just gallery) Nothing
+   ((res, galleryWidget'), enctype) <- runFormPost $ galleryForm (Just gallery) Nothing
+   let galleryWidget = sensibleTextarea galleryWidget'
    case res of 
       FormSuccess editable -> do
          runDB $ update galleryId

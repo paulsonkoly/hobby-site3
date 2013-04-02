@@ -7,6 +7,7 @@ import Yesod.Auth
 import Yesod.Auth.HashDB (authHashDB, getAuthIdHashDB)
 import Yesod.Default.Config
 import Yesod.Default.Util (addStaticContentExternal)
+import Yesod.Form.Nic (YesodNic)
 import Network.HTTP.Conduit (Manager)
 import qualified Settings
 import Settings.Development (development)
@@ -62,6 +63,8 @@ mkMessage "App" "messages" "en"
 -- usually require access to the AppRoute datatype. Therefore, we
 -- split these actions into two functions and place them in separate files.
 mkYesodData "App" $(parseRoutesFile "config/routes")
+
+instance YesodNic App
 
 type Form x = Html -> MForm App App (FormResult x, Widget)
 

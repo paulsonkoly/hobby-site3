@@ -47,7 +47,7 @@ Image
 Gallery
    name                     Text
    userId                   UserId
-   description              Text      Maybe
+   description              Html      Maybe
    parentId                 GalleryId Maybe
    weight                   Int64
    UniqueGallery            name
