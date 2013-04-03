@@ -25,7 +25,6 @@ import Lib.ImageType
 import Lib.Accessibility
 
 import Control.Monad
-import Data.Maybe
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -69,10 +68,17 @@ instance YesodNic App
 type Form x = Html -> MForm App App (FormResult x, Widget)
 
 
-currentUserM :: GHandler s App (Maybe User)
-currentUserM = maybeAuthId >>= \maid -> if isJust maid
-   then runDB $ get $ fromJust maid
-   else return Nothing
+-- | the currently logged in user, if any
+maybeUser :: GHandler s App (Maybe (Entity User))
+maybeUser = do
+   maid <- maybeAuthId
+   case maid of
+      Just aid -> do
+         muser <- runDB $ get aid
+         return $ case muser of
+            Just user -> Just $ Entity aid user
+            Nothing   -> Nothing
+      Nothing -> return Nothing
 
 
 -- | Authourization for pages that require logged in user wrapped in GHandler
@@ -80,17 +86,17 @@ isLoggedIn :: GHandler s App AuthResult
 isLoggedIn = let
    toAuthorization (Just _) = Authorized
    toAuthorization Nothing  = AuthenticationRequired
-   in liftM toAuthorization currentUserM
+   in liftM toAuthorization maybeUser
 
 
 -- | Authorization for pages that require admin wrapped in GHandler
 isAdmin :: GHandler s App AuthResult
 isAdmin = let
-   toAuthorization (Just user) = if userAdmin user
+   toAuthorization (Just (Entity _ user)) = if userAdmin user
       then Authorized
       else Unauthorized "You don't have the authorization to access the resource"  
    toAuthorization Nothing = AuthenticationRequired
-   in liftM toAuthorization currentUserM
+   in liftM toAuthorization maybeUser
 
 
 -- | Authorization for pages that require admin or 'uid' matching wrapped in GHandler
@@ -103,11 +109,11 @@ isSelfOrAdmin uid = maybeAuthId >>= \maid -> if maid == Just uid
 canAccess :: ImageId -> GHandler s App AuthResult
 canAccess imageId = do
    maid <- maybeAuthId
-   image <- runDB $ get404 $ imageId
+   image <- runDB $ get404 imageId
    case imageAccessibility image of
       Public -> return Authorized
       Member -> isLoggedIn
-      Owner  -> if isJust maid && fromJust maid == imageUserId image
+      Owner  -> if maid == Just (imageUserId image)
          then return Authorized
          else isAdmin
 
@@ -115,8 +121,8 @@ canAccess imageId = do
 isOwner :: ImageId -> GHandler s App AuthResult
 isOwner imageId = do
    maid <- maybeAuthId
-   image <- runDB $ get404 $ imageId
-   if isJust maid && fromJust maid == imageUserId image
+   image <- runDB $ get404 imageId
+   if maid == Just (imageUserId image)
       then return Authorized
       else isAdmin
 

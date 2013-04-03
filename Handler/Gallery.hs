@@ -30,9 +30,8 @@ import Data.Maybe
 -- Only works when user is logged in
 selectGalleries :: [Filter Gallery] -> Handler [Entity Gallery]
 selectGalleries filter' = do
-   Just currentUser <- currentUserM
-   Just aid <- maybeAuthId
-   let userFilter = if userAdmin currentUser then [] else [ GalleryUserId ==. aid ]
+   Just (Entity uid user) <- maybeUser
+   let userFilter = if userAdmin user then [] else [ GalleryUserId ==. uid ]
    runDB $ selectList (userFilter ++ filter') [Asc GalleryWeight]
 
 
@@ -50,11 +49,11 @@ galleryTreeAeson = do
          children <- selectGalleries [ GalleryParentId ==. Just galleryId ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ Import.object
-            [ "title"      .= galleryName gallery
-            , "tooltip"    .= liftM renderHtml (galleryDescription gallery)
-            , "isFolder"   .= True
-            , "children"   .= childrenAeson
-            , "key"        .= galleryId
+            [ "title"    .= galleryName gallery
+            , "tooltip"  .= liftM renderHtml (galleryDescription gallery)
+            , "isFolder" .= True
+            , "children" .= childrenAeson
+            , "key"      .= galleryId
             ]
 
 
@@ -109,10 +108,10 @@ galleryForm :: (RenderMessage master FormMessage, YesodNic master)
    -> Maybe GalleryId -- ^ parentId to be passed in a hidden field
    -> Html -> MForm sub master (FormResult EditableGallery, GWidget sub master ())
 galleryForm mgallery mparentId = renderDivs $ EditableGallery
-      <$> areq textField "Name"        (Just $ maybe "" galleryName mgallery)
+      <$> areq textField "Name"           (Just $ maybe "" galleryName mgallery)
       <*> aopt nicHtmlField "Description" (liftM galleryDescription mgallery)
-      <*> aopt hiddenField ""          (Just mparentId)
-      <*> areq intField "Weigth"       (Just $ maybe 0 galleryWeight mgallery)
+      <*> aopt hiddenField ""             (Just mparentId)
+      <*> areq intField "Weigth"          (Just $ maybe 0 galleryWeight mgallery)
 
 
 generateGalleryForm :: Maybe Gallery -> Maybe GalleryId -> Handler (Widget, Enctype)
@@ -162,11 +161,11 @@ postNewGalleryR = do
    case res of 
       FormSuccess editable -> do
          _ <- runDB $ insert Gallery
-            { galleryName = name editable
-            , galleryUserId = authId
+            { galleryName        = name editable
+            , galleryUserId      = authId
             , galleryDescription = description editable
-            , galleryParentId = parentId editable
-            , galleryWeight = weight editable
+            , galleryParentId    = parentId editable
+            , galleryWeight      = weight editable
             }
          setMessage $ toHtml ("The gallery has successfully been created." :: Text)
          redirect GalleriesR
@@ -189,9 +188,9 @@ postEditGalleryR galleryId = do
    case res of 
       FormSuccess editable -> do
          runDB $ update galleryId
-            [ GalleryName =. name editable
+            [ GalleryName        =. name editable
             , GalleryDescription =. description editable
-            , GalleryWeight =. weight editable
+            , GalleryWeight      =. weight editable
             ]
          setMessage $ toHtml $ "The gallery " <> name editable <> " has successfully been updated."
          redirect GalleriesR

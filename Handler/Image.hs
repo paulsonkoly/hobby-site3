@@ -16,7 +16,6 @@ import Yesod.Auth
 
 import Data.Text (pack, unpack)
 
-import Data.Maybe
 import Control.Monad
 
 import Lib.Image
@@ -63,15 +62,14 @@ imageForm image = renderDivs $ EditableImage
 
 getImagesR :: Handler RepHtml
 getImagesR = do
-   muser <- currentUserM
-   maid <- maybeAuthId
+   mentity <- maybeUser
    images <- runDB $ selectList 
-      ( case muser of
-         Just user -> if userAdmin user
+      ( case mentity of
+         Just (Entity uid user) -> if userAdmin user
             then [] 
-            else [ImageAccessibility ==. Public]
-               ||. [ImageAccessibility ==. Member, ImageUserId ==. fromJust maid]
-         Nothing -> [ImageAccessibility ==. Public]
+            else [ ImageAccessibility ==. Public ]
+               ||. [ ImageAccessibility ==. Member, ImageUserId ==. uid ]
+         Nothing -> [ ImageAccessibility ==. Public ]
       ) []
    defaultLayout $(widgetFile "images")
 
@@ -99,7 +97,7 @@ postCreateImageR = do
          $(logDebug) $ "File upload request " <> fileName f
          eitherImage <- liftIO $ mkImage f
          either
-            (\errMsg -> return $ object [ "error" .= pack (show $ errMsg) ])
+            (\errMsg -> return $ object [ "error" .= pack (show errMsg) ])
             (\image -> do
                imageId  <- runDB $ insert $ (snd image)
                   { imageUserId = uid
@@ -121,11 +119,13 @@ postCreateImageR = do
 getImageR :: ImageId -> Handler RepHtml
 getImageR imageId = do
    image <- runDB $ get404 imageId
-   maid <- maybeAuthId
-   muser <- currentUserM
-   let canEditDelete = (not $ isNothing maid)
-         && (userAdmin (fromJust muser) || fromJust maid == imageUserId image)
+   mentity <- maybeUser
+   let canEditDelete = decide image mentity
    defaultLayout $(widgetFile "image")
+   where
+      decide image mentity = case mentity of
+         Just (Entity uid user) -> userAdmin user || uid == imageUserId image
+         Nothing                -> False
 
 
 getEditImageR :: ImageId -> Handler RepHtml
@@ -152,7 +152,7 @@ postEditImageR imageId = do
 postDeleteImageR :: ImageId -> Handler RepHtml
 postDeleteImageR imageId = do
    image <- runDB $ get404 imageId
-   setMessage $ toHtml $ "Image " <> (imageOrigName image) <> " has been deleted."
+   setMessage $ toHtml $ "Image " <> imageOrigName image <> " has been deleted."
    liftIO $ deleteImage $ unpack $ imageMd5Hash image
-   runDB $ delete $ imageId
+   runDB $ delete imageId
    redirect ImagesR
