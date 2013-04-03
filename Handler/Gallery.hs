@@ -25,17 +25,29 @@ import Data.Int
 import Data.Maybe
 
 
+-- | select galleries that the user can see plus adding the specified condition 
+--
+-- Only works when user is logged in
+selectGalleries :: [Filter Gallery] -> Handler [Entity Gallery]
+selectGalleries filter' = do
+   Just currentUser <- currentUserM
+   Just aid <- maybeAuthId
+   let userFilter = if userAdmin currentUser then [] else [ GalleryUserId ==. aid ]
+   runDB $ selectList (userFilter ++ filter') [Asc GalleryWeight]
+
+
+
 -- | Turns the in database gallery structure (forest) into an aeson Value.
 --
 -- Gets into infinite recursion if the structure is cyclic.
 galleryTreeAeson :: Handler Value
 galleryTreeAeson = do
-   top <- runDB $ selectList [GalleryParentId ==. Nothing] [Asc GalleryWeight]
+   top <- selectGalleries [ GalleryParentId ==. Nothing ]
    liftM toJSON $ mapM galleryTreeAeson' top 
    where
       galleryTreeAeson' :: Entity Gallery -> Handler Value
       galleryTreeAeson' (Entity galleryId gallery) = do
-         children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] [Asc GalleryWeight]
+         children <- selectGalleries [ GalleryParentId ==. Just galleryId ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ Import.object
             [ "title"      .= galleryName gallery
