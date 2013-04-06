@@ -67,18 +67,13 @@ instance YesodNic App
 
 type Form x = Html -> MForm App App (FormResult x, Widget)
 
-
 -- | the currently logged in user, if any
 maybeUser :: GHandler s App (Maybe (Entity User))
 maybeUser = do
    maid <- maybeAuthId
    case maid of
-      Just aid -> do
-         muser <- runDB $ get aid
-         return $ case muser of
-            Just user -> Just $ Entity aid user
-            Nothing   -> Nothing
-      Nothing -> return Nothing
+      Just aid -> liftM (fmap (Entity aid)) $ runDB (get aid)
+      Nothing  -> return Nothing
 
 
 -- | Authourization for pages that require logged in user wrapped in GHandler
@@ -99,33 +94,51 @@ isAdmin = let
    in liftM toAuthorization maybeUser
 
 
--- | Authorization for pages that require admin or 'uid' matching wrapped in GHandler
-isSelfOrAdmin :: UserId -> GHandler s App AuthResult
-isSelfOrAdmin uid = maybeAuthId >>= \maid -> if maid == Just uid
-   then return Authorized
-   else isAdmin 
+type Ownership t = (Maybe UserId, Entity t)
 
 
-canAccess :: ImageId -> GHandler s App AuthResult
-canAccess imageId = do
-   maid <- maybeAuthId
-   image <- runDB $ get404 imageId
-   case imageAccessibility image of
-      Public -> return Authorized
-      Member -> isLoggedIn
-      Owner  -> if maid == Just (imageUserId image)
-         then return Authorized
-         else isAdmin
+-- | Type class for resource ownership.
+--
+-- mininal complete definition : getOwner, canRead
+class (Owned t) where
+   getOwner :: Entity t -> UserId
+   -- | define read access rules for a resource
+   canRead :: Ownership t -> GHandler s App AuthResult
+
+   -- | returns the Ownership in the request that needs to be verified
+   getOwnership ::
+      ( PersistEntityBackend t ~ PersistMonadBackend (SqlPersist (GHandler s App))
+      , PersistEntity t
+      ) => Key t -> GHandler s App (Ownership t)
+   getOwnership tid = do
+      muserId <- maybeAuthId
+      t       <- runDB $ get404 tid
+      return (muserId, Entity tid t)
+
+   -- | returns Authorized for resource owners (and admins)
+   isOwner :: Ownership t -> GHandler s App AuthResult
+   isOwner (muserId, e) = if muserId == Just (getOwner e) then return Authorized else isAdmin
 
 
-isOwner :: ImageId -> GHandler s App AuthResult
-isOwner imageId = do
-   maid <- maybeAuthId
-   image <- runDB $ get404 imageId
-   if maid == Just (imageUserId image)
-      then return Authorized
-      else isAdmin
+instance Owned User where -- users own themselves, and can only read themselves
+   getOwner = entityKey
+   canRead = isOwner
 
+
+instance Owned Image where
+   getOwner = imageUserId . entityVal
+   canRead (muserId, Entity _ image) =
+      case imageAccessibility image of
+         Public -> return Authorized
+         Member -> isLoggedIn
+         Owner  -> if muserId == Just (imageUserId image)
+            then return Authorized
+            else isAdmin
+
+
+instance Owned Gallery where
+   getOwner = galleryUserId . entityVal
+   canRead _ = return Authorized
 
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -173,32 +186,30 @@ instance Yesod App where
     isAuthorized RobotsR     False = return Authorized
 
     -- route name, then a boolean indicating if it's a write request
-    isAuthorized UsersR                 _ = isAdmin
-    isAuthorized (UserR uid)            _ = isSelfOrAdmin uid
-    isAuthorized (EditUserR uid)        _ = isSelfOrAdmin uid
-    isAuthorized (DeleteUserR _)        _ = isAdmin
-
-    isAuthorized ImagesR                _ = return Authorized
-    isAuthorized (ImageR imageId)       _ = canAccess imageId
-    isAuthorized CreateImageR           _ = isLoggedIn 
-    isAuthorized (EditImageR imageId)   _ = isOwner imageId
-    isAuthorized (DeleteImageR imageId) _ = isOwner imageId 
+    isAuthorized UsersR                      _ = isAdmin
+    isAuthorized (UserR uid)                 _ = getOwnership uid >>= canRead
+    isAuthorized (EditUserR uid)             _ = getOwnership uid >>= isOwner
+    isAuthorized (DeleteUserR _)             _ = isAdmin
+                                             
+    isAuthorized ImagesR                     _ = return Authorized
+    isAuthorized (ImageR imageId)            _ = getOwnership imageId >>= canRead
+    isAuthorized CreateImageR                _ = isLoggedIn 
+    isAuthorized (EditImageR imageId)        _ = getOwnership imageId >>= isOwner
+    isAuthorized (DeleteImageR imageId)      _ = getOwnership imageId >>= isOwner
     -- the protection here is that the user can't guess the md5 from the route
     -- thus if we receive a request with good md5 we let it through, otherwise
     -- 404. This way we don't have to look up the database.
-    isAuthorized (ImageFileR _ _)       _ = return Authorized
-
-    ------------------------------------------------------------
-    -- XXX SORT OUT THE PERMISSIONS !!!!!!!!!!!!!!!!!!!!!!!!! --
-    ------------------------------------------------------------
-    isAuthorized GalleriesR             _ = return Authorized
-    isAuthorized GalleryTreeR           _ = isLoggedIn
-    isAuthorized NewGalleryR            _ = isLoggedIn
-    isAuthorized (NewChildGalleryR _)   _ = isLoggedIn
-    isAuthorized (EditGalleryR _)       _ = isLoggedIn
-    isAuthorized (MoveGalleryR _ _)     _ = isLoggedIn
-    isAuthorized (MoveTopGalleryR _)    _ = isLoggedIn
-    isAuthorized (DeleteGalleryR _)     _ = isLoggedIn
+    isAuthorized (ImageFileR _ _)            _ = return Authorized
+                                            
+    isAuthorized GalleriesR                  _ = return Authorized
+    isAuthorized GalleryTreeR                _ = isLoggedIn
+    isAuthorized NewGalleryR                 _ = isLoggedIn
+    -- would make sense to limit this to owner
+    isAuthorized (NewChildGalleryR _)        _ = isLoggedIn
+    isAuthorized (EditGalleryR galleryId)    _ = getOwnership galleryId >>= isOwner
+    isAuthorized (MoveGalleryR galleryId _)  _ = getOwnership galleryId >>= isOwner
+    isAuthorized (MoveTopGalleryR galleryId) _ = getOwnership galleryId >>= isOwner
+    isAuthorized (DeleteGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
 
     -- default deny 
     isAuthorized _ _ = return
