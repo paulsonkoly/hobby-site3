@@ -11,9 +11,9 @@
          <li><em>Owner</em> accessibility : only the owner can see the image (administrator can see everything)
       Accessibility rules only control who can <em>see</em> the image. Images can only be modified by their owner or an administrator.
 
-<form method="post" action="@{EditImageR imageId}" enctype="#{enctype}">
+<form method="post" action="@{EditImageR imageId}" enctype="#{enctype}" class="form-inline">
    ^{imageFormWidget}
-   <button type="submit" class="btn btn-warning delete">
+   <button type="submit" class="btn btn-primary">
       <i class="icon-ok-sign icon-white">
       <span>Update
 
