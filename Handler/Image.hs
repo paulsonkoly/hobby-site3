@@ -78,7 +78,7 @@ getImagesR = do
 getImageFileR :: ImageType -- ^ the image file type
               -> String    -- ^ the image md5 hash
               -> Handler ()
-getImageFileR i s = sendFile typeJpeg $ imageFilePath i s
+getImageFileR i s = neverExpires >> sendFile typeJpeg (imageFilePath i s)
 
 
 
