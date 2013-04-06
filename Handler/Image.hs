@@ -62,7 +62,7 @@ imageForm image = renderDivs $ EditableImage
 
 getImagesR :: Handler RepHtml
 getImagesR = do
-   mentity <- maybeUser
+   mentity <- maybeAuth
    images <- runDB $ selectList 
       ( case mentity of
          Just (Entity uid user) -> if userAdmin user
@@ -119,7 +119,7 @@ postCreateImageR = do
 getImageR :: ImageId -> Handler RepHtml
 getImageR imageId = do
    image <- runDB $ get404 imageId
-   mentity <- maybeUser
+   mentity <- maybeAuth
    let canEditDelete = decide image mentity
    defaultLayout $(widgetFile "image")
    where

@@ -67,21 +67,13 @@ instance YesodNic App
 
 type Form x = Html -> MForm App App (FormResult x, Widget)
 
--- | the currently logged in user, if any
-maybeUser :: GHandler s App (Maybe (Entity User))
-maybeUser = do
-   maid <- maybeAuthId
-   case maid of
-      Just aid -> liftM (fmap (Entity aid)) $ runDB (get aid)
-      Nothing  -> return Nothing
-
 
 -- | Authourization for pages that require logged in user wrapped in GHandler
 isLoggedIn :: GHandler s App AuthResult
 isLoggedIn = let
    toAuthorization (Just _) = Authorized
    toAuthorization Nothing  = AuthenticationRequired
-   in liftM toAuthorization maybeUser
+   in liftM toAuthorization maybeAuth
 
 
 -- | Authorization for pages that require admin wrapped in GHandler
@@ -91,7 +83,7 @@ isAdmin = let
       then Authorized
       else Unauthorized "You don't have the authorization to access the resource"  
    toAuthorization Nothing = AuthenticationRequired
-   in liftM toAuthorization maybeUser
+   in liftM toAuthorization maybeAuth
 
 
 type Ownership t = (Maybe UserId, Entity t)

@@ -9,6 +9,7 @@ where
 
 import Import
 import Control.Monad (liftM)
+import Yesod.Auth
 import Yesod.Auth.HashDB (setPassword)
 import Yesod.Form.Validations
 
@@ -30,7 +31,7 @@ entryForm muser =
 getUsersR :: Handler RepHtml
 getUsersR = do
     users <- runDB $ selectList [] [Desc UserName]
-    Just (Entity _ currentUser) <- maybeUser
+    Just (Entity _ currentUser) <- maybeAuth
     (userWidget, enctype) <- generateFormPost $ entryForm Nothing
     defaultLayout $(widgetFile "users") 
 

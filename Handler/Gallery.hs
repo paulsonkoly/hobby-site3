@@ -30,7 +30,7 @@ import Data.Maybe
 -- Only works when user is logged in
 selectGalleries :: [Filter Gallery] -> Handler [Entity Gallery]
 selectGalleries filter' = do
-   Just (Entity uid user) <- maybeUser
+   Just (Entity uid user) <- maybeAuth
    let userFilter = if userAdmin user then [] else [ GalleryUserId ==. uid ]
    runDB $ selectList (userFilter ++ filter') [Asc GalleryWeight]
 
