@@ -1,0 +1,10 @@
+function acquireOrphans() {
+    $.ajax({
+      url: "@{AcquireImagesR galleryId}",
+      type: "post"
+   }).done(function ( data ) {
+      if (data.message != null) {
+         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+      }
+   });
+}

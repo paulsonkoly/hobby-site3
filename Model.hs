@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Model where
 
 import Prelude
@@ -7,6 +9,7 @@ import Data.Text (Text)
 import Data.Time.Clock
 import Data.Int
 import Database.Persist.Quasi
+import Database.Persist.Store
 import Lib.Accessibility
 
 
@@ -14,8 +17,11 @@ import Lib.Accessibility
 -- You can find more information on persistent and how to declare entities
 -- at:
 -- http://www.yesodweb.com/book/persistent/
-share [mkPersist sqlOnlySettings, mkMigrate "migrateAll"]
-    $(persistFileWith lowerCaseSettings "config/models")
+share
+   [ mkPersist sqlOnlySettings
+   , mkMigrate "migrateAll"
+   , mkDeleteCascade sqlOnlySettings
+   ] $(persistFileWith lowerCaseSettings "config/models")
 
 
 instance (PathPiece t) => PathPiece (Maybe t) where

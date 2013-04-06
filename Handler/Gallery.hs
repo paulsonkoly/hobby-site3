@@ -9,6 +9,8 @@ module Handler.Gallery
    , postMoveGalleryR
    , postMoveTopGalleryR
    , postDeleteGalleryR
+   , getImagesGalleryR
+   , postAcquireImagesR
    )
 where
 
@@ -20,10 +22,12 @@ import Yesod.Form.Nic
 import Text.Lucius
 import Text.Julius
 import Text.Blaze.Html.Renderer.Text
+import Data.Text (unpack)
 import Control.Monad
 import Data.Int
 import Data.Maybe
 
+import Lib.ImageType
 
 -- | select galleries that the user can see plus adding the specified condition 
 --
@@ -236,7 +240,7 @@ deleteGallery :: GalleryId -> Handler ()
 deleteGallery galleryId = do
    children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] []
    mapM_ (deleteGallery . entityKey) children
-   runDB $ delete galleryId
+   runDB $ deleteCascadeWhere [ GalleryId ==. galleryId ]
 
 
 -- | Handles gallery deletion requests.
@@ -246,4 +250,38 @@ postDeleteGalleryR :: GalleryId -> Handler RepJson
 postDeleteGalleryR galleryId = do
    deleteGallery galleryId
    jsonToRepJson $ toJSON ()
+
+
+-- 
+getImagesGalleryR :: GalleryId -> Handler RepHtml
+getImagesGalleryR galleryId = do
+   Just (Entity uid user) <- maybeAuth
+   let uidCond = if userAdmin user then [] else [ ImageUserId ==. uid ] 
+   galleryImages <- liftM (map $ imageGalleryImageId . entityVal) . runDB $
+      selectList [ ImageGalleryGalleryId ==. galleryId ] []
+   images <- liftM concat $ forM galleryImages (\iid ->
+      runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
+   defaultLayout $ do
+      addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+      toWidget $(juliusFile "templates/imagesGallery.julius")
+      $(widgetFile "imagesGallery")
+
+
+-- | Acquires all images not present in any gallery
+--
+-- Images here are limited to true ownership ie admins don't pick up
+-- other users images. However admins can run acquire on anybodies
+-- galleries.
+postAcquireImagesR :: GalleryId -> Handler RepJson
+postAcquireImagesR galleryId = do
+   Just (Entity uid _ ) <- maybeAuth
+   -- this is horrendously bad
+   adopteeIds <- liftM (map $ imageGalleryImageId . entityVal) . runDB $ selectList [] []
+   orphanIds  <- liftM (map entityKey) . runDB $ selectList
+      [ ImageId /<-. adopteeIds
+      , ImageUserId ==. uid
+      ] []
+   mapM_ ((runDB . insert_) . flip ImageGallery galleryId) orphanIds
+   jsonToRepJson $ toJSON ()
+
 

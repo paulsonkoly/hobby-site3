@@ -183,7 +183,7 @@ instance Yesod App where
                                              
     isAuthorized ImagesR                     _ = return Authorized
     isAuthorized (ImageR imageId)            _ = getOwnership imageId >>= canRead
-    isAuthorized CreateImageR                _ = isLoggedIn 
+    isAuthorized CreateImageR                _ = isLoggedIn
     isAuthorized (EditImageR imageId)        _ = getOwnership imageId >>= isOwner
     isAuthorized (DeleteImageR imageId)      _ = getOwnership imageId >>= isOwner
     -- the protection here is that the user can't guess the md5 from the route
@@ -200,6 +200,8 @@ instance Yesod App where
     isAuthorized (MoveGalleryR galleryId _)  _ = getOwnership galleryId >>= isOwner
     isAuthorized (MoveTopGalleryR galleryId) _ = getOwnership galleryId >>= isOwner
     isAuthorized (DeleteGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
+    isAuthorized (ImagesGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
+    isAuthorized (AcquireImagesR galleryId)  _ = getOwnership galleryId >>= isOwner
 
     -- default deny 
     isAuthorized _ _ = return

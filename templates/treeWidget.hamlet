@@ -9,6 +9,9 @@
       <button class="btn" onclick="editFocused();">
          <i class="icon-edit">
          <span>Edit
+      <button class="btn" onclick="imagesFocused();">
+         <i class="icon-picture">
+         <span>Images
       <button class="btn" onclick="moveSelected();">
          <i class="icon-move">
          <span>Move

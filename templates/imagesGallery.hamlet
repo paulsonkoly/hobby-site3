@@ -1,0 +1,17 @@
+<div class="input-prepend">
+   <div class="btn-group">
+      <button class="btn" onclick="acquireOrphans();">
+         <i class="icon-plus-sign">
+         <span>Acquire orphans
+      <button class="btn" onclick="shareSelected();">
+         <i class="icon-share">
+         <span>Share selected
+   <input type="text" placeholder="Gallery">
+<br />
+<button class="btn btn-danger" onclick="acquireOrphans();">
+   <i class="icon-trash icon-white">
+   <span>Remove selected
+<br />
+$forall Entity imageId image <- images
+   <a href="@{ImageR imageId}">
+      <img class="img-polaroid" src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}">

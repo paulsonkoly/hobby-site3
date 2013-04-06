@@ -26,4 +26,5 @@
 /gallery/#GalleryId/move/#GalleryId MoveGalleryR     POST
 /gallery/#GalleryId/movetop         MoveTopGalleryR  POST
 /gallery/#GalleryId/del             DeleteGalleryR   POST
-
+/gallery/#GalleryId/images          ImagesGalleryR   GET
+/gallery/#GalleryId/acquire         AcquireImagesR   POST

@@ -27,6 +27,16 @@ function editFocused() {
 }
 
 
+function imagesFocused() {
+   object = $("#tree").dynatree("getActiveNode");
+   if (object != null) {
+      window.location.href = "/gallery/" + object.data.key + "/images";
+   }
+}
+
+
+
+
 function moveSelected() {
    focused = $("#tree").dynatree("getActiveNode");
    selected = $("#tree").dynatree("getSelectedNodes");

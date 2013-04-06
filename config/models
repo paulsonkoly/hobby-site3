@@ -52,3 +52,7 @@ Gallery
    weight                   Int64
    UniqueGallery            name
 
+ImageGallery
+   imageId                  ImageId   DeleteCascade
+   galleryId                GalleryId DeleteCascade
+   UniqueImageGallery       imageId galleryId

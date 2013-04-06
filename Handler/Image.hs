@@ -53,17 +53,16 @@ data EditableImage = EditableImage { accessibility :: Accessibility }
 
 imageForm :: RenderMessage master FormMessage
           => Image
-          -> Html 
+          -> Html
           -> MForm sub master (FormResult EditableImage, GWidget sub master ())
 imageForm image = renderDivs $ EditableImage
    <$> areq (selectField optionsEnum) "Accessibility" (Just $ imageAccessibility image)
 
 
-
 getImagesR :: Handler RepHtml
 getImagesR = do
    mentity <- maybeAuth
-   images <- runDB $ selectList 
+   images <- runDB $ selectList
       ( case mentity of
          Just (Entity uid user) -> if userAdmin user
             then [] 
@@ -79,7 +78,6 @@ getImageFileR :: ImageType -- ^ the image file type
               -> String    -- ^ the image md5 hash
               -> Handler ()
 getImageFileR i s = neverExpires >> sendFile typeJpeg (imageFilePath i s)
-
 
 
 getCreateImageR :: Handler RepHtml
@@ -154,5 +152,5 @@ postDeleteImageR imageId = do
    image <- runDB $ get404 imageId
    setMessage $ toHtml $ "Image " <> imageOrigName image <> " has been deleted."
    liftIO $ deleteImage $ unpack $ imageMd5Hash image
-   runDB $ delete imageId
+   runDB $ deleteCascadeWhere [ ImageId ==. imageId ]
    redirect ImagesR
