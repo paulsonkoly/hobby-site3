@@ -127,13 +127,11 @@ instance Owned User where -- users own themselves, and can only read themselves
 
 instance Owned Image where
    getOwner = imageUserId . entityVal
-   canRead (muserId, Entity _ image) =
+   canRead (muserId, Entity imageId image) =
       case imageAccessibility image of
          Public -> return Authorized
          Member -> isLoggedIn
-         Owner  -> if muserId == Just (imageUserId image)
-            then return Authorized
-            else isAdmin
+         Owner  -> isOwner (muserId, Entity imageId image)
 
 
 instance Owned Gallery where
