@@ -50,7 +50,7 @@ galleryTreeAeson = do
    where
       galleryTreeAeson' :: Entity Gallery -> Handler Value
       galleryTreeAeson' (Entity galleryId gallery) = do
-         children <- selectGalleries [ GalleryParentId ==. Just galleryId ]
+         children <- childrenGallery galleryId [Asc GalleryWeight ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ Import.object
             [ "title"    .= galleryName gallery
@@ -238,7 +238,7 @@ postMoveTopGalleryR what = do
 
 deleteGallery :: GalleryId -> Handler ()
 deleteGallery galleryId = do
-   children <- runDB $ selectList [ GalleryParentId ==. Just galleryId ] []
+   children <- childrenGallery galleryId []
    mapM_ (deleteGallery . entityKey) children
    runDB $ deleteCascadeWhere [ GalleryId ==. galleryId ]
 
@@ -257,8 +257,7 @@ getImagesGalleryR :: GalleryId -> Handler RepHtml
 getImagesGalleryR galleryId = do
    Just (Entity uid user) <- maybeAuth
    let uidCond = if userAdmin user then [] else [ ImageUserId ==. uid ] 
-   galleryImages <- liftM (map $ imageGalleryImageId . entityVal) . runDB $
-      selectList [ ImageGalleryGalleryId ==. galleryId ] []
+   galleryImages <- liftM (map entityKey) $ imagesGallery galleryId
    images <- liftM concat $ forM galleryImages (\iid ->
       runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
    defaultLayout $ do

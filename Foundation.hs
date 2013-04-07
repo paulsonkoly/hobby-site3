@@ -128,7 +128,23 @@ instance Owned Image where
 
 instance Owned Gallery where
    getOwner = galleryUserId . entityVal
-   canRead _ = return Authorized
+   canRead (muserId, Entity galleryId gallery) = do
+      ownership <- isOwner (muserId, Entity galleryId gallery)
+      if ownership == Authorized
+         then return Authorized
+         else anyAuthorized (imagesGallery galleryId)
+            $ anyAuthorized (childrenGallery galleryId [])
+            $ return $ Unauthorized "You can't access this gallery"
+      where
+         anyAuthorized
+            :: (Owned t)
+            => GHandler s App [Entity t] -> GHandler s App AuthResult -> GHandler s App AuthResult
+         anyAuthorized inWhat orElse = do
+            ownerships <- inWhat >>= mapM (\e -> canRead (muserId, e))
+            if Authorized `elem` ownerships
+               then return Authorized
+               else orElse
+
 
 
 -- Please see the documentation for the Yesod typeclass. There are a number

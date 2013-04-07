@@ -11,6 +11,7 @@ import Data.Int
 import Database.Persist.Quasi
 import Database.Persist.Store
 import Lib.Accessibility
+import Control.Monad
 
 
 -- You can define all of your database entities in the entities file.
@@ -37,5 +38,34 @@ instance HDB.HashDBUser (User) where
   setSaltAndPasswordHash s h u = u { userHash = h
                                    , userSalt = s
                                    }
+
+
+-- naming convetions here just follows the normal rules as these were normal
+-- Entity fields
+
+-- | the images directly inside an ImageGallery
+imagesGallery ::
+   ( YesodPersist master
+   , PersistQuery (YesodPersistBackend master (GHandler sub master))
+   , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Image
+   )
+   => GalleryId -- ^ id of the gallery in which we inspect the contained images 
+   -> GHandler sub master [Entity Image]
+imagesGallery galleryId = do
+   imageIds <- liftM (map $ imageGalleryImageId . entityVal) . runDB $
+      selectList [ ImageGalleryGalleryId ==. galleryId ] []
+   runDB $ selectList [ImageId <-. imageIds] []
+
+
+-- | the children galleries of an ImageGallery
+childrenGallery :: 
+   ( YesodPersist master
+   , PersistQuery (YesodPersistBackend master (GHandler sub master))
+   , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Gallery
+   )
+   => GalleryId            -- ^ id of the gallery in which we query the siblings
+   -> [SelectOpt Gallery]  -- ^ query options
+   -> GHandler sub master [Entity Gallery]
+childrenGallery galleryId = runDB . selectList [ GalleryParentId ==. Just galleryId ]
 
 
