@@ -30,3 +30,21 @@ function removeSelected() {
       }
    });
 }
+
+function shareSelected() {
+   var data = [];
+   var checked = $('#image-list :checked');
+   for (i = 0; i < checked.length; i++) {
+      data.push(parseInt(checked[i].id));
+   }
+   data = { "gallery": $('#gallery-name-select').val(), "images": data };
+   $.ajax({
+      url: "@{AddImagesR}",
+      type: "post",
+      data: JSON.stringify(data)
+   }).done(function ( data ) {
+      if (data.message != null) {
+         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+      }
+   });
+}

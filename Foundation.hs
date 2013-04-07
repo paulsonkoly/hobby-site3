@@ -218,6 +218,11 @@ instance Yesod App where
     isAuthorized (ImagesGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
     isAuthorized (AcquireImagesR galleryId)  _ = getOwnership galleryId >>= isOwner
     isAuthorized (RemoveImagesR galleryId)   _ = getOwnership galleryId >>= isOwner
+    -- this identifies the Gallery from the JSON uploaded that contains the name
+    -- therefore authorization logic moves into the Handler which is bad bad bad
+    -- if we change the js to query the proper galleryId as part of the Route all
+    -- will be good again
+    isAuthorized AddImagesR                  _ = isLoggedIn
 
     -- default deny 
     isAuthorized _ _ = return

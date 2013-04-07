@@ -6,7 +6,7 @@
       <button class="btn" onclick="shareSelected();">
          <i class="icon-share">
          <span>Share selected
-   <input type="text" placeholder="Gallery">
+   <input type="text" placeholder="Gallery" id="gallery-name-select">
 <br />
 <button class="btn btn-danger" onclick="removeSelected();">
    <i class="icon-trash icon-white">

@@ -12,6 +12,7 @@ module Handler.Gallery
    , getImagesGalleryR
    , postAcquireImagesR
    , postRemoveImagesR
+   , postAddImagesR
    )
 where
 
@@ -287,7 +288,7 @@ postAcquireImagesR galleryId = do
 
 -- | Removes specified images from the gallery 
 --
--- JSON format [ id0, id1, ..]
+-- JSON format [ ImageId ]
 postRemoveImagesR :: GalleryId -> Handler RepJson
 postRemoveImagesR galleryId = do
    reqData <- parseJsonBody
@@ -305,3 +306,32 @@ postRemoveImagesR galleryId = do
       Error msg -> return $ object [ "message" .= msg ]
    jsonToRepJson response
 
+
+-- | JSON format representation for AddImagesR
+--
+-- { gallery: Text, images: [ ImageId ] }
+data AddImagesData = AddImagesData { whereTo :: Text, imageIds :: [ImageId] }
+instance FromJSON AddImagesData where
+   parseJSON (Object v) = AddImagesData
+         <$> v .: "gallery"
+         <*> v .: "images" 
+   parseJSON _ = mzero
+
+
+-- | Adds specified images to a gallery
+postAddImagesR :: Handler RepJson
+postAddImagesR = do
+   reqData <- parseJsonBody
+   response <- case reqData of
+      Success dat -> do
+         Entity galleryId gallery <- runDB $ getBy404 $ UniqueGallery $ whereTo dat
+         authorization <- maybeAuthId >>= \maid -> isOwner (maid, Entity galleryId gallery)
+         unless (authorization == Authorized) $ permissionDenied "You have to own the other gallery"
+         forM_ (imageIds dat) $ \imageId ->
+            runDB $ insert ImageGallery
+               { imageGalleryImageId = imageId
+               , imageGalleryGalleryId = galleryId
+               } 
+         return $ toJSON ()
+      Error msg   -> return $ object [ "message" .= msg ]
+   jsonToRepJson response
