@@ -8,10 +8,16 @@
          <span>Share selected
    <input type="text" placeholder="Gallery">
 <br />
-<button class="btn btn-danger" onclick="acquireOrphans();">
+<button class="btn btn-danger" onclick="removeSelected();">
    <i class="icon-trash icon-white">
    <span>Remove selected
 <br />
-$forall Entity imageId image <- images
-   <a href="@{ImageR imageId}">
-      <img class="img-polaroid" src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}">
+
+<ul class="thumbnails" id="image-list">
+   $forall Entity imageId image <- images
+     <li class="span2">
+       <div class="thumbnail">
+         <a href="@{ImageR imageId}" class="thumbnail">
+            <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" alt="#{imageOrigName image}">
+         <input type="checkbox" id="#{toPathPiece imageId}">
+         <small>#{imageOrigName image}

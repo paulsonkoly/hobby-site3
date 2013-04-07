@@ -3,8 +3,30 @@ function acquireOrphans() {
       url: "@{AcquireImagesR galleryId}",
       type: "post"
    }).done(function ( data ) {
+      location.reload();
       if (data.message != null) {
          $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+      }
+   });
+}
+
+function removeSelected() {
+   var data = [];
+   var checked = $('#image-list :checked');
+   for (i = 0; i < checked.length; i++) {
+      data.push(checked[i].id);
+   }
+   $.ajax({
+      url: "@{RemoveImagesR galleryId}",
+      type: "post",
+      data: JSON.stringify(data)
+   }).done(function ( data ) {
+      if (data.message != null) {
+         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+      }
+      // remove images on client side
+      for (i = 0; i < data.length; i++) {
+         $('#image-list #' + data[i]).parent().parent().remove();
       }
    });
 }

@@ -146,7 +146,6 @@ instance Owned Gallery where
                else orElse
 
 
-
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
 instance Yesod App where
@@ -218,6 +217,7 @@ instance Yesod App where
     isAuthorized (DeleteGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
     isAuthorized (ImagesGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
     isAuthorized (AcquireImagesR galleryId)  _ = getOwnership galleryId >>= isOwner
+    isAuthorized (RemoveImagesR galleryId)   _ = getOwnership galleryId >>= isOwner
 
     -- default deny 
     isAuthorized _ _ = return

@@ -28,3 +28,4 @@
 /gallery/#GalleryId/del             DeleteGalleryR   POST
 /gallery/#GalleryId/images          ImagesGalleryR   GET
 /gallery/#GalleryId/acquire         AcquireImagesR   POST
+/gallery/#GalleryId/remove          RemoveImagesR    POST

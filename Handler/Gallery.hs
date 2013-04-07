@@ -11,6 +11,7 @@ module Handler.Gallery
    , postDeleteGalleryR
    , getImagesGalleryR
    , postAcquireImagesR
+   , postRemoveImagesR
    )
 where
 
@@ -26,6 +27,7 @@ import Data.Text (unpack)
 import Control.Monad
 import Data.Int
 import Data.Maybe
+import Data.Aeson.Types hiding (object)
 
 import Lib.ImageType
 
@@ -52,7 +54,7 @@ galleryTreeAeson = do
       galleryTreeAeson' (Entity galleryId gallery) = do
          children <- childrenGallery galleryId [Asc GalleryWeight ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
-         return $ Import.object
+         return $ object
             [ "title"    .= galleryName gallery
             , "tooltip"  .= liftM renderHtml (galleryDescription gallery)
             , "isFolder" .= True
@@ -262,7 +264,6 @@ getImagesGalleryR galleryId = do
       runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
    defaultLayout $ do
       addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
-      toWidget $(juliusFile "templates/imagesGallery.julius")
       $(widgetFile "imagesGallery")
 
 
@@ -283,4 +284,24 @@ postAcquireImagesR galleryId = do
    mapM_ ((runDB . insert_) . flip ImageGallery galleryId) orphanIds
    jsonToRepJson $ toJSON ()
 
+
+-- | Removes specified images from the gallery 
+--
+-- JSON format [ id0, id1, ..]
+postRemoveImagesR :: GalleryId -> Handler RepJson
+postRemoveImagesR galleryId = do
+   reqData <- parseJsonBody
+   response <- case reqData of
+      Success dat -> liftM (toJSON . catMaybes) $ mapM (\pathPiece -> do
+            let mImageId = fromPathPiece pathPiece
+            maybe (return Nothing) (\imageId -> do
+               runDB $ deleteWhere
+                  [ ImageGalleryGalleryId ==. galleryId
+                  , ImageGalleryImageId ==. imageId
+                  ]
+               return $ Just $ toJSON imageId
+               ) mImageId
+         ) dat
+      Error msg -> return $ object [ "message" .= msg ]
+   jsonToRepJson response
 
