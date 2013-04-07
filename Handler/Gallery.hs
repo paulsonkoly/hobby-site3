@@ -1,15 +1,31 @@
+{- |
+Module      :  $Header$
+Description :  Gallery related handlers
+Copyright   :  (c) Paul Sonkoly
+License     :  AllRightsReserved
+
+Maintainer  :  sonkoly.pal@gmail.com
+Stability   :  stable
+Portability :  portable
+-}
+
 module Handler.Gallery
-   ( getGalleriesR
-   , getGalleryTreeR
+   ( -- * Handlers
+     getGalleriesR
+   -- ** Gallery manipulation
    , getNewGalleryR
-   , postNewGalleryR
    , getNewChildGalleryR
+   , postNewGalleryR
    , getEditGalleryR
    , postEditGalleryR
+   -- *** AJAX for the gallery manipulation (tree view) page
+   , getGalleryTreeR
    , postMoveGalleryR
    , postMoveTopGalleryR
    , postDeleteGalleryR
+   -- ** Gallery/images association
    , getImagesGalleryR
+   -- *** AJAX for the image association page
    , postAcquireImagesR
    , postRemoveImagesR
    , postAddImagesR
@@ -253,7 +269,7 @@ postDeleteGalleryR galleryId = do
    jsonToRepJson $ toJSON ()
 
 
--- 
+-- | Serves the page where users can move images into their galleries
 getImagesGalleryR :: GalleryId -> Handler RepHtml
 getImagesGalleryR galleryId = do
    Just (Entity uid user) <- maybeAuth
@@ -277,7 +293,7 @@ postAcquireImagesR galleryId = do
    -- this is horrendously bad
    adopteeIds <- liftM (map $ imageGalleryImageId . entityVal) . runDB $ selectList [] []
    orphanIds  <- liftM (map entityKey) . runDB $ selectList
-      [ ImageId /<-. adopteeIds
+      [ ImageId     /<-. adopteeIds
       , ImageUserId ==. uid
       ] []
    mapM_ ((runDB . insert_) . flip ImageGallery galleryId) orphanIds
@@ -286,7 +302,7 @@ postAcquireImagesR galleryId = do
 
 -- | Removes specified images from the gallery 
 --
--- JSON format [ ImageId ]
+-- JSON format @[ ImageId ]@
 postRemoveImagesR :: GalleryId -> Handler RepJson
 postRemoveImagesR galleryId = do
    reqData <- parseJsonBody
@@ -296,7 +312,7 @@ postRemoveImagesR galleryId = do
             maybe (return Nothing) (\imageId -> do
                runDB $ deleteWhere
                   [ ImageGalleryGalleryId ==. galleryId
-                  , ImageGalleryImageId ==. imageId
+                  , ImageGalleryImageId   ==. imageId
                   ]
                return $ Just $ toJSON imageId
                ) mImageId
@@ -306,17 +322,16 @@ postRemoveImagesR galleryId = do
 
 
 -- | JSON format representation for AddImagesR
---
--- { gallery: Text, images: [ ImageId ] }
 data AddImagesData = AddImagesData { whereTo :: Text, imageIds :: [ImageId] }
 instance FromJSON AddImagesData where
-   parseJSON (Object v) = AddImagesData
-         <$> v .: "gallery"
-         <*> v .: "images" 
+   parseJSON (Object v) = AddImagesData <$> v .: "gallery" <*> v .: "images"
    parseJSON _ = mzero
 
 
 -- | Adds specified images to a gallery
+--
+-- JSON format : @{ gallery: Text, images: [ ImageId ] }@
+-- TODO : passing the galleryId as argument
 postAddImagesR :: Handler RepJson
 postAddImagesR = do
    reqData <- parseJsonBody
@@ -327,7 +342,7 @@ postAddImagesR = do
          unless (authorization == Authorized) $ permissionDenied "You have to own the other gallery"
          forM_ (imageIds dat) $ \imageId ->
             runDB $ insert ImageGallery
-               { imageGalleryImageId = imageId
+               { imageGalleryImageId   = imageId
                , imageGalleryGalleryId = galleryId
                } 
          return $ toJSON ()
