@@ -75,9 +75,7 @@ treeWidget = do
    addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
    addScript (StaticR js_dynatree_jquery_ui_custom_js)
    addScript (StaticR js_dynatree_jquery_cookie_js)
-   toWidget $(luciusFile "templates/ui.dynatree.lucius")
    addScript (StaticR js_dynatree_jquery_dynatree_js)
-   toWidget $(juliusFile "templates/treeWidget.julius")
    $(widgetFile "treeWidget")
 
 
