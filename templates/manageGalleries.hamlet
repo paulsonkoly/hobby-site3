@@ -1,0 +1,14 @@
+<div class="well">
+   <h3>Usage
+   <ul>
+      <li><em>Focused</em> gallery is where the gallery name is highlighted.
+      <li><em>Selected</em> gallery is where the check box is ticked.
+   To <strong>create</strong> a gallery under an other gallery focus the parent gallery first and then click on <i class="icon-plus"></i>New.<br />
+   To create a <strong>top level</strong> gallery just click <i class="icon-plus"></i>Top level.<br />
+   To <strong>edit</strong> a gallery first focus it then click on <i class="icon-edit"></i>Edit.<br />
+   To <strong>move</strong> galleries first select then focus the parent and then click on <i class="icon-move"></i>Move.<br />
+   To <strong>move</strong> to top level select it, then click on <i class="icon-arrow-up"></i>Move top<br />
+   To <strong>delete</strong> galleries select the galleries you wish to delete.<br />
+   <span class="label label-warning">Warning!</span> We delete all galleries recursively that is accessible from the selected galleries. Once a gallery is deleted there is no going back.
+
+^{treeWidget}

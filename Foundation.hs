@@ -97,15 +97,16 @@ class (Owned t) where
    -- | define read access rules for a resource
    canRead :: Ownership t -> GHandler s App AuthResult
 
+   -- | converts Entity to Ownership
+   toOwnership :: Entity t -> GHandler s App (Ownership t)
+   toOwnership t = maybeAuthId >>= \maid -> return (maid, t)
+
    -- | returns the Ownership in the request that needs to be verified
    getOwnership ::
       ( PersistEntityBackend t ~ PersistMonadBackend (SqlPersist (GHandler s App))
       , PersistEntity t
       ) => Key t -> GHandler s App (Ownership t)
-   getOwnership tid = do
-      muserId <- maybeAuthId
-      t       <- runDB $ get404 tid
-      return (muserId, Entity tid t)
+   getOwnership tid = runDB (get404 tid) >>= \t -> toOwnership $ Entity tid t
 
    -- | returns Authorized for resource owners (and admins)
    isOwner :: Ownership t -> GHandler s App AuthResult
@@ -127,23 +128,8 @@ instance Owned Image where
 
 
 instance Owned Gallery where
-   getOwner = galleryUserId . entityVal
-   canRead (muserId, Entity galleryId gallery) = do
-      ownership <- isOwner (muserId, Entity galleryId gallery)
-      if ownership == Authorized
-         then return Authorized
-         else anyAuthorized (imagesGallery galleryId)
-            $ anyAuthorized (childrenGallery galleryId [])
-            $ return $ Unauthorized "You can't access this gallery"
-      where
-         anyAuthorized
-            :: (Owned t)
-            => GHandler s App [Entity t] -> GHandler s App AuthResult -> GHandler s App AuthResult
-         anyAuthorized inWhat orElse = do
-            ownerships <- inWhat >>= mapM (\e -> canRead (muserId, e))
-            if Authorized `elem` ownerships
-               then return Authorized
-               else orElse
+   getOwner  = galleryUserId . entityVal
+   canRead _ = return Authorized
 
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -205,8 +191,10 @@ instance Yesod App where
     -- thus if we receive a request with good md5 we let it through, otherwise
     -- 404. This way we don't have to look up the database.
     isAuthorized (ImageFileR _ _)            _ = return Authorized
-                                            
+
     isAuthorized GalleriesR                  _ = return Authorized
+    isAuthorized (GalleryR galleryId)        _ = return Authorized
+    isAuthorized ManageGalleriesR            _ = isLoggedIn
     isAuthorized GalleryTreeR                _ = isLoggedIn
     isAuthorized NewGalleryR                 _ = isLoggedIn
     -- would make sense to limit this to owner

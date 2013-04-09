@@ -11,8 +11,10 @@ Portability :  portable
 
 module Handler.Gallery
    ( -- * Handlers
-     getGalleriesR
+     getGalleryR
+   , getGalleriesR
    -- ** Gallery manipulation
+   , getManageGalleriesR
    , getNewGalleryR
    , getNewChildGalleryR
    , postNewGalleryR
@@ -48,15 +50,46 @@ import Data.Aeson.Types hiding (object)
 
 import Lib.ImageType
 
--- | select galleries that the user can see plus adding the specified condition 
---
--- Only works when user is logged in
-selectGalleries :: [Filter Gallery] -> Handler [Entity Gallery]
-selectGalleries filter' = do
-   Just (Entity uid user) <- maybeAuth
-   let userFilter = if userAdmin user then [] else [ GalleryUserId ==. uid ]
-   runDB $ selectList (userFilter ++ filter') [Asc GalleryWeight]
 
+catAuthorized :: (Owned t) => [ Entity t ] -> Handler [ Entity t ]
+catAuthorized entities = liftM catMaybes $ forM entities $ \entity -> do
+   read' <- toOwnership entity >>= canRead
+   return $ if read' == Authorized then Just entity else Nothing
+
+
+thumbnailGallery :: GalleryId -> Handler (Maybe Image)
+thumbnailGallery galleryId = liftM listToMaybe $ thumbnailGallery' galleryId
+   where
+      thumbnailGallery' :: GalleryId -> Handler [ Image ]
+      thumbnailGallery' galleryId = do
+         images   <- imagesGallery galleryId >>= catAuthorized >>= return . (map entityVal)
+         children <- childrenGallery (Just galleryId) [ Asc GalleryWeight ]
+            >>= mapM (thumbnailGallery' . entityKey)
+         return $ images ++ (concat children)
+
+
+-- | The gallery browser
+getGalleryR' :: Maybe GalleryId -> Handler RepHtml
+getGalleryR' mGalleryId = do
+   mGallery <- maybe (return Nothing) (runDB . get) mGalleryId
+   allChildren <- childrenGallery mGalleryId [ Asc GalleryWeight ]
+   children <- liftM catMaybes $ forM allChildren $ \child -> do
+         thumbnail <- thumbnailGallery $ entityKey child
+         return $ case thumbnail of
+            Just image -> Just (image, child)
+            Nothing    -> Nothing
+   images <- maybe (return []) (\galleryId -> imagesGallery galleryId >>= catAuthorized) mGalleryId
+   defaultLayout $(widgetFile "galleries")
+
+
+-- | The gallery browser viewing the top level gallery
+getGalleriesR :: Handler RepHtml
+getGalleriesR = getGalleryR' Nothing
+
+
+-- | The gallery browser showing the requested gallery
+getGalleryR :: GalleryId -> Handler RepHtml
+getGalleryR = getGalleryR' . Just
 
 
 -- | Turns the in database gallery structure (forest) into an aeson Value.
@@ -64,12 +97,12 @@ selectGalleries filter' = do
 -- Gets into infinite recursion if the structure is cyclic.
 galleryTreeAeson :: Handler Value
 galleryTreeAeson = do
-   top <- selectGalleries [ GalleryParentId ==. Nothing ]
+   top <- childrenGallery Nothing [Asc GalleryWeight]
    liftM toJSON $ mapM galleryTreeAeson' top 
    where
       galleryTreeAeson' :: Entity Gallery -> Handler Value
       galleryTreeAeson' (Entity galleryId gallery) = do
-         children <- childrenGallery galleryId [Asc GalleryWeight ]
+         children <- childrenGallery (Just galleryId) [Asc GalleryWeight ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ object
             [ "title"    .= galleryName gallery
@@ -95,11 +128,11 @@ treeWidget = do
    $(widgetFile "treeWidget")
 
 
--- | Browse or manage galleries.
-getGalleriesR :: Handler RepHtml
-getGalleriesR = defaultLayout $ do
-   setTitle "Image galleries"
-   $(widgetFile "galleries")
+-- | Manage galleries.
+getManageGalleriesR :: Handler RepHtml
+getManageGalleriesR = defaultLayout $ do
+   setTitle "Image gallery manager"
+   $(widgetFile "manageGalleries")
 
 
 -- | Fields that we can edit on a Gallery
@@ -255,7 +288,7 @@ postMoveTopGalleryR what = do
 
 deleteGallery :: GalleryId -> Handler ()
 deleteGallery galleryId = do
-   children <- childrenGallery galleryId []
+   children <- childrenGallery (Just galleryId) []
    mapM_ (deleteGallery . entityKey) children
    runDB $ deleteCascadeWhere [ GalleryId ==. galleryId ]
 
@@ -338,7 +371,7 @@ postAddImagesR = do
    response <- case reqData of
       Success dat -> do
          Entity galleryId gallery <- runDB $ getBy404 $ UniqueGallery $ whereTo dat
-         authorization <- maybeAuthId >>= \maid -> isOwner (maid, Entity galleryId gallery)
+         authorization <- toOwnership (Entity galleryId gallery) >>= isOwner
          unless (authorization == Authorized) $ permissionDenied "You have to own the other gallery"
          forM_ (imageIds dat) $ \imageId ->
             runDB $ insert ImageGallery

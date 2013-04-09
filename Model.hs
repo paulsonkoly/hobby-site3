@@ -63,9 +63,8 @@ childrenGallery ::
    , PersistQuery (YesodPersistBackend master (GHandler sub master))
    , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Gallery
    )
-   => GalleryId            -- ^ id of the gallery in which we query the siblings
+   => Maybe GalleryId      -- ^ id of the gallery in which we query the siblings
    -> [SelectOpt Gallery]  -- ^ query options
    -> GHandler sub master [Entity Gallery]
-childrenGallery galleryId = runDB . selectList [ GalleryParentId ==. Just galleryId ]
-
+childrenGallery mGalleryId = runDB . selectList [ GalleryParentId ==. mGalleryId ]
 
