@@ -10,6 +10,7 @@ import Data.Monoid
 import Data.Time.Clock
 import Data.Int
 import Data.Maybe
+import Control.Monad
 import Database.Persist.Quasi
 import Database.Persist.Store
 import Database.Persist.GenericSql
@@ -31,7 +32,7 @@ instance (PathPiece t) => PathPiece (Maybe t) where
    toPathPiece (Just galleryId) = toPathPiece galleryId
    toPathPiece Nothing          = "nothing"
    fromPathPiece "nothing"      = Nothing
-   fromPathPiece text           = Just $ fromPathPiece $ text
+   fromPathPiece text           = Just $ fromPathPiece text
 
 
 instance HDB.HashDBUser (User) where
@@ -82,7 +83,7 @@ thumbnailGallery ::
    -> GalleryId    -- ^ id of the gallery in which we inspect the contained images 
    -> GHandler sub master (Maybe (Entity Image))
 thumbnailGallery mUserId galleryId =
-   runDB $ rawSql query ([ toPersistValue galleryId ] ++ imageAccess mUserId) >>= return . listToMaybe
+   runDB $ liftM listToMaybe $ rawSql query $ toPersistValue galleryId : imageAccess mUserId
    where
       query = "WITH RECURSIVE children_gallery_ids(id) AS "
             -- recursion entry, fills up the working table
@@ -96,10 +97,11 @@ thumbnailGallery mUserId galleryId =
             <> ") SELECT ?? FROM children_gallery_ids "
             <> "JOIN image_gallery ON children_gallery_ids.id = image_gallery.gallery_id "
             <> "JOIN image ON image_gallery.image_id = image.id "
-            <> (imageAccessSql mUserId)
+            <> imageAccessSql mUserId
             <> "ORDER BY random() LIMIT 1"
-      imageAccess = map toPersistValue . maybeToList
-      imageAccessSql (Just _) = "WHERE image.accessibility = 'Public' OR image.accessibility = 'Member' OR image.user_id = ? "
-      imageAccessSql Nothing = "WHERE image.accessibility = 'Public' "
+      imageAccess (Just userId) = map toPersistValue [ Public, Member ] ++ [ toPersistValue userId ]
+      imageAccess Nothing       = [ toPersistValue Public ]
+      imageAccessSql (Just _)   = "WHERE image.accessibility = ? OR image.accessibility = ? OR image.user_id = ? "
+      imageAccessSql Nothing    = "WHERE image.accessibility = ? "
 
 
