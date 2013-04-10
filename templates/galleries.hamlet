@@ -8,7 +8,7 @@
       Galleries
 
 <ul class="thumbnails">
-   $forall (thumbnail, Entity childId child) <- children
+   $forall (Entity _ thumbnail, Entity childId child) <- children
      <li class="span2">
        <div class="thumbnail">
          <a href="@{GalleryR childId}" class="thumbnail">

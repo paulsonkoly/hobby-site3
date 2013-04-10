@@ -39,8 +39,6 @@ import Import
 import Yesod.Auth
 import Yesod.Form.Nic
 
-import Text.Lucius
-import Text.Julius
 import Text.Blaze.Html.Renderer.Text
 import Data.Text (unpack)
 import Control.Monad
@@ -57,27 +55,15 @@ catAuthorized entities = liftM catMaybes $ forM entities $ \entity -> do
    return $ if read' == Authorized then Just entity else Nothing
 
 
-thumbnailGallery :: GalleryId -> Handler (Maybe Image)
-thumbnailGallery galleryId = liftM listToMaybe $ thumbnailGallery' galleryId
-   where
-      thumbnailGallery' :: GalleryId -> Handler [ Image ]
-      thumbnailGallery' galleryId = do
-         images   <- imagesGallery galleryId >>= catAuthorized >>= return . (map entityVal)
-         children <- childrenGallery (Just galleryId) [ Asc GalleryWeight ]
-            >>= mapM (thumbnailGallery' . entityKey)
-         return $ images ++ (concat children)
-
-
 -- | The gallery browser
 getGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getGalleryR' mGalleryId = do
+   maid <- maybeAuthId
    mGallery <- maybe (return Nothing) (runDB . get) mGalleryId
    allChildren <- childrenGallery mGalleryId [ Asc GalleryWeight ]
    children <- liftM catMaybes $ forM allChildren $ \child -> do
-         thumbnail <- thumbnailGallery $ entityKey child
-         return $ case thumbnail of
-            Just image -> Just (image, child)
-            Nothing    -> Nothing
+         thumbnail <- thumbnailGallery maid $ entityKey child
+         return $ maybe Nothing (\image -> Just (image, child)) thumbnail
    images <- maybe (return []) (\galleryId -> imagesGallery galleryId >>= catAuthorized) mGalleryId
    defaultLayout $(widgetFile "galleries")
 
@@ -355,7 +341,7 @@ postRemoveImagesR galleryId = do
 
 
 -- | JSON format representation for AddImagesR
-data AddImagesData = AddImagesData { whereTo :: Text, imageIds :: [ImageId] }
+data AddImagesData = AddImagesData { whereTo' :: Text, imageIds :: [ImageId] }
 instance FromJSON AddImagesData where
    parseJSON (Object v) = AddImagesData <$> v .: "gallery" <*> v .: "images"
    parseJSON _ = mzero
@@ -370,7 +356,7 @@ postAddImagesR = do
    reqData <- parseJsonBody
    response <- case reqData of
       Success dat -> do
-         Entity galleryId gallery <- runDB $ getBy404 $ UniqueGallery $ whereTo dat
+         Entity galleryId gallery <- runDB $ getBy404 $ UniqueGallery $ whereTo' dat
          authorization <- toOwnership (Entity galleryId gallery) >>= isOwner
          unless (authorization == Authorized) $ permissionDenied "You have to own the other gallery"
          forM_ (imageIds dat) $ \imageId ->

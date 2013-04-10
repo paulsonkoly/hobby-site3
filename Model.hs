@@ -6,12 +6,14 @@ import Prelude
 import Yesod
 import qualified Yesod.Auth.HashDB as HDB
 import Data.Text (Text)
+import Data.Monoid
 import Data.Time.Clock
 import Data.Int
+import Data.Maybe
 import Database.Persist.Quasi
 import Database.Persist.Store
+import Database.Persist.GenericSql
 import Lib.Accessibility
-import Control.Monad
 
 
 -- You can define all of your database entities in the entities file.
@@ -48,13 +50,13 @@ imagesGallery ::
    ( YesodPersist master
    , PersistQuery (YesodPersistBackend master (GHandler sub master))
    , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Image
+   , YesodPersistBackend master ~ SqlPersist
    )
    => GalleryId -- ^ id of the gallery in which we inspect the contained images 
    -> GHandler sub master [Entity Image]
-imagesGallery galleryId = do
-   imageIds <- liftM (map $ imageGalleryImageId . entityVal) . runDB $
-      selectList [ ImageGalleryGalleryId ==. galleryId ] []
-   runDB $ selectList [ImageId <-. imageIds] []
+imagesGallery galleryId = runDB $ rawSql query [ toPersistValue galleryId ]
+   where
+      query = "SELECT ?? FROM image, image_gallery WHERE image_gallery.image_id = image.id AND image_gallery.gallery_id = ?"
 
 
 -- | the children galleries of an ImageGallery
@@ -67,4 +69,37 @@ childrenGallery ::
    -> [SelectOpt Gallery]  -- ^ query options
    -> GHandler sub master [Entity Gallery]
 childrenGallery mGalleryId = runDB . selectList [ GalleryParentId ==. mGalleryId ]
+
+
+-- a representative thumbnail for the gallery ( if any )
+thumbnailGallery ::
+   ( YesodPersist master
+   , PersistQuery (YesodPersistBackend master (GHandler sub master))
+   , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Image
+   , YesodPersistBackend master ~ SqlPersist
+   )
+   => Maybe UserId -- ^ user currently logged in
+   -> GalleryId    -- ^ id of the gallery in which we inspect the contained images 
+   -> GHandler sub master (Maybe (Entity Image))
+thumbnailGallery mUserId galleryId =
+   runDB $ rawSql query ([ toPersistValue galleryId ] ++ imageAccess mUserId) >>= return . listToMaybe
+   where
+      query = "WITH RECURSIVE children_gallery_ids(id) AS "
+            -- recursion entry, fills up the working table
+            <> "( "
+            <> "   SELECT id FROM gallery WHERE id = ? "
+            <> "UNION ALL "
+            -- recursion, working table has data from previous level
+            <> "   SELECT gallery.id "
+            <> "     FROM children_gallery_ids, gallery "
+            <> "     WHERE gallery.parent_id=children_gallery_ids.id "
+            <> ") SELECT ?? FROM children_gallery_ids "
+            <> "JOIN image_gallery ON children_gallery_ids.id = image_gallery.gallery_id "
+            <> "JOIN image ON image_gallery.image_id = image.id "
+            <> (imageAccessSql mUserId)
+            <> "ORDER BY random() LIMIT 1"
+      imageAccess = map toPersistValue . maybeToList
+      imageAccessSql (Just _) = "WHERE image.accessibility = 'Public' OR image.accessibility = 'Member' OR image.user_id = ? "
+      imageAccessSql Nothing = "WHERE image.accessibility = 'Public' "
+
 

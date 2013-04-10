@@ -193,7 +193,7 @@ instance Yesod App where
     isAuthorized (ImageFileR _ _)            _ = return Authorized
 
     isAuthorized GalleriesR                  _ = return Authorized
-    isAuthorized (GalleryR galleryId)        _ = return Authorized
+    isAuthorized (GalleryR _)                _ = return Authorized
     isAuthorized ManageGalleriesR            _ = isLoggedIn
     isAuthorized GalleryTreeR                _ = isLoggedIn
     isAuthorized NewGalleryR                 _ = isLoggedIn
