@@ -47,7 +47,7 @@ instance HDB.HashDBUser (User) where
 -- Entity fields
 
 -- | the images directly inside an ImageGallery
-imagesGallery ::
+galleryImages ::
    ( YesodPersist master
    , PersistQuery (YesodPersistBackend master (GHandler sub master))
    , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Image
@@ -55,13 +55,13 @@ imagesGallery ::
    )
    => GalleryId -- ^ id of the gallery in which we inspect the contained images 
    -> GHandler sub master [Entity Image]
-imagesGallery galleryId = runDB $ rawSql query [ toPersistValue galleryId ]
+galleryImages galleryId = runDB $ rawSql query [ toPersistValue galleryId ]
    where
       query = "SELECT ?? FROM image, image_gallery WHERE image_gallery.image_id = image.id AND image_gallery.gallery_id = ?"
 
 
--- | the children galleries of an ImageGallery
-childrenGallery :: 
+-- | the children galleries of a Gallery
+galleryChildren :: 
    ( YesodPersist master
    , PersistQuery (YesodPersistBackend master (GHandler sub master))
    , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Gallery
@@ -69,11 +69,11 @@ childrenGallery ::
    => Maybe GalleryId      -- ^ id of the gallery in which we query the siblings
    -> [SelectOpt Gallery]  -- ^ query options
    -> GHandler sub master [Entity Gallery]
-childrenGallery mGalleryId = runDB . selectList [ GalleryParentId ==. mGalleryId ]
+galleryChildren mGalleryId = runDB . selectList [ GalleryParentId ==. mGalleryId ]
 
 
 -- a representative thumbnail for the gallery ( if any )
-thumbnailGallery ::
+galleryThumbnail ::
    ( YesodPersist master
    , PersistQuery (YesodPersistBackend master (GHandler sub master))
    , PersistMonadBackend (YesodPersistBackend master (GHandler sub master)) ~ PersistEntityBackend Image
@@ -82,7 +82,7 @@ thumbnailGallery ::
    => Maybe UserId -- ^ user currently logged in
    -> GalleryId    -- ^ id of the gallery in which we inspect the contained images 
    -> GHandler sub master (Maybe (Entity Image))
-thumbnailGallery mUserId galleryId =
+galleryThumbnail mUserId galleryId =
    runDB $ liftM listToMaybe $ rawSql query $ toPersistValue galleryId : imageAccess mUserId
    where
       query = "WITH RECURSIVE children_gallery_ids(id) AS "
@@ -105,14 +105,14 @@ thumbnailGallery mUserId galleryId =
       imageAccessSql Nothing    = "WHERE image.accessibility = ? "
 
 
-namesGalleries ::
+galleryNames ::
    ( YesodPersist master
    , YesodPersistBackend master ~ SqlPersist
    )
    => Entity User
    -> Text
    -> GHandler sub master [ Entity Gallery ]
-namesGalleries (Entity userId user) query = do
+galleryNames (Entity userId user) query = do
    let name = "'%" <> query <> "%'"
    let (userSql, userPersist) = if userAdmin user
          then ("", [])

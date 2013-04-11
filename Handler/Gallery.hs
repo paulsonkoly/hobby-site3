@@ -83,11 +83,11 @@ getGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getGalleryR' mGalleryId = do
    maid <- maybeAuthId
    mGallery <- maybe (return Nothing) (runDB . get) mGalleryId
-   allChildren <- childrenGallery mGalleryId [ Asc GalleryWeight ]
+   allChildren <- galleryChildren mGalleryId [ Asc GalleryWeight ]
    children <- liftM catMaybes $ forM allChildren $ \child -> do
-         thumbnail <- thumbnailGallery maid $ entityKey child
+         thumbnail <- galleryThumbnail maid $ entityKey child
          return $ maybe Nothing (\image -> Just (image, child)) thumbnail
-   images <- maybe (return []) (imagesGallery >=> catAuthorized) mGalleryId
+   images <- maybe (return []) (galleryImages >=> catAuthorized) mGalleryId
    defaultLayout $ slideshowWidget mGallery children images
 
 
@@ -106,12 +106,12 @@ getGalleryR = getGalleryR' . Just
 -- Gets into infinite recursion if the structure is cyclic.
 galleryTreeAeson :: Handler Value
 galleryTreeAeson = do
-   top <- childrenGallery Nothing [Asc GalleryWeight]
+   top <- galleryChildren Nothing [Asc GalleryWeight]
    liftM toJSON $ mapM galleryTreeAeson' top 
    where
       galleryTreeAeson' :: Entity Gallery -> Handler Value
       galleryTreeAeson' (Entity galleryId gallery) = do
-         children <- childrenGallery (Just galleryId) [Asc GalleryWeight ]
+         children <- galleryChildren (Just galleryId) [Asc GalleryWeight ]
          childrenAeson <- liftM toJSON $ mapM galleryTreeAeson' children
          return $ object
             [ "title"    .= galleryName gallery
@@ -297,7 +297,7 @@ postMoveTopGalleryR what = do
 
 deleteGallery :: GalleryId -> Handler ()
 deleteGallery galleryId = do
-   children <- childrenGallery (Just galleryId) []
+   children <- galleryChildren (Just galleryId) []
    mapM_ (deleteGallery . entityKey) children
    runDB $ deleteCascadeWhere [ GalleryId ==. galleryId ]
 
@@ -316,8 +316,8 @@ getImagesGalleryR :: GalleryId -> Handler RepHtml
 getImagesGalleryR galleryId = do
    Just (Entity uid user) <- maybeAuth
    let uidCond = if userAdmin user then [] else [ ImageUserId ==. uid ] 
-   galleryImages <- liftM (map entityKey) $ imagesGallery galleryId
-   images <- liftM concat $ forM galleryImages (\iid ->
+   images' <- liftM (map entityKey) $ galleryImages galleryId
+   images <- liftM concat $ forM images' (\iid ->
       runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
    defaultLayout $ do
       addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
@@ -402,7 +402,7 @@ getNamesGalleriesR = do
    query <- lookupGetParam "query"
    response <- case query of
       Just text -> do
-         galleries <- maybeAuth >>= flip namesGalleries text . fromJust
+         galleries <- maybeAuth >>= flip galleryNames text . fromJust
          return $ toJSON $ map (galleryName . entityVal) galleries
       Nothing -> return $ object [ "message" .= ("query parameter expected" :: Text) ]
    jsonToRepJson response 
