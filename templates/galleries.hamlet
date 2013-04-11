@@ -7,16 +7,24 @@
    $nothing
       Galleries
 
-<ul class="thumbnails">
-   $forall (Entity _ thumbnail, Entity childId child) <- children
-     <li class="span2">
-       <div class="thumbnail">
-         <a href="@{GalleryR childId}" class="thumbnail">
-           <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }">
-           <small>#{galleryName child}
+$if not $ null children
+   <ul class="thumbnails">
+      $forall (Entity _ thumbnail, Entity childId child) <- children
+        <li class="span2">
+          <div class="thumbnail">
+            <a href="@{GalleryR childId}" class="thumbnail">
+              <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }">
+              <small>#{galleryName child}
 
-<ul class="thumbnails">
-   $forall (Entity imageId image) <- images
-     <li class="span1">
-        <a href="@{ImageR imageId}" class="thumbnail">
-           <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" alt="#{imageOrigName image}">
+$if not $ null images
+   <div class="ad-gallery">
+      <div class="ad-image-wrapper">
+      <div class="ad-controls">
+      <div class="ad-nav">
+         <div class="ad-thumbs">
+            <ul class="ad-thumb-list">
+               $forall (Entity _ image) <- images
+                  <li>
+                     <a href="@{ImageFileR Large $ unpack $ imageMd5Hash image}">
+                        <!-- use title here to show image title -->
+                        <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" class="img-polaroid">

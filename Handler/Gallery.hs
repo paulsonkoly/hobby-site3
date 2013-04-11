@@ -55,6 +55,28 @@ catAuthorized entities = liftM catMaybes $ forM entities $ \entity -> do
    return $ if read' == Authorized then Just entity else Nothing
 
 
+slideshowWidget 
+   :: Maybe Gallery                      -- ^ the gallery that we are showing
+   -> [ (Entity Image, Entity Gallery) ] -- ^ thumbnail child gallery pairs
+   -> [ Entity Image ]                   -- ^ images in this gallery
+   -> Widget
+slideshowWidget mGallery children images = do
+   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+   addScript $ StaticR js_ad_gallery_jquery_ad_gallery_js
+   toWidget [julius|
+      $('.ad-gallery').adGallery(
+         { loader_image: "@{StaticR img_ad_gallery_loader_gif}"
+         , width: "700", height: "670"
+         , slideshow:
+            { start_label: "<i class=\"icon-play\"></i>"
+            , stop_label: "<i class=\"icon-stop\"></i>"
+            }
+         }
+      ); 
+   |]
+   $(widgetFile "galleries")
+
+
 -- | The gallery browser
 getGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getGalleryR' mGalleryId = do
@@ -64,8 +86,8 @@ getGalleryR' mGalleryId = do
    children <- liftM catMaybes $ forM allChildren $ \child -> do
          thumbnail <- thumbnailGallery maid $ entityKey child
          return $ maybe Nothing (\image -> Just (image, child)) thumbnail
-   images <- maybe (return []) (\galleryId -> imagesGallery galleryId >>= catAuthorized) mGalleryId
-   defaultLayout $(widgetFile "galleries")
+   images <- maybe (return []) (imagesGallery >=> catAuthorized) mGalleryId
+   defaultLayout $ slideshowWidget mGallery children images
 
 
 -- | The gallery browser viewing the top level gallery
