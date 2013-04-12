@@ -113,10 +113,10 @@ galleryNames ::
    -> Text
    -> GHandler sub master [ Entity Gallery ]
 galleryNames (Entity userId user) query = do
-   let name = "'%" <> query <> "%'"
+   let name = toPersistValue $ "%" <> query <> "%"
    let (userSql, userPersist) = if userAdmin user
          then ("", [])
          else (" AND user_id = ?", [ toPersistValue userId ])
-   let sqlQuery = "SELECT ?? FROM gallery WHERE name LIKE " <> name <> userSql <> " ORDER BY name"
-   runDB $ rawSql sqlQuery userPersist
+   let sqlQuery = "SELECT ?? FROM gallery WHERE name LIKE ?" <> userSql <> " ORDER BY name"
+   runDB $ rawSql sqlQuery $ name : userPersist
 
