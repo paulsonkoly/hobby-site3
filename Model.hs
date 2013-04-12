@@ -105,3 +105,18 @@ thumbnailGallery mUserId galleryId =
       imageAccessSql Nothing    = "WHERE image.accessibility = ? "
 
 
+namesGalleries ::
+   ( YesodPersist master
+   , YesodPersistBackend master ~ SqlPersist
+   )
+   => Entity User
+   -> Text
+   -> GHandler sub master [ Entity Gallery ]
+namesGalleries (Entity userId user) query = do
+   let name = "'%" <> query <> "%'"
+   let (userSql, userPersist) = if userAdmin user
+         then ("", [])
+         else (" AND user_id = ?", [ toPersistValue userId ])
+   let sqlQuery = "SELECT ?? FROM gallery WHERE name LIKE " <> name <> userSql <> " ORDER BY name"
+   runDB $ rawSql sqlQuery userPersist
+

@@ -32,3 +32,4 @@
 /gallery/#GalleryId/acquire         AcquireImagesR   POST
 /gallery/#GalleryId/remove          RemoveImagesR    POST
 /gallery_/addImages                 AddImagesR       POST
+/galleries/names                    NamesGalleriesR  GET

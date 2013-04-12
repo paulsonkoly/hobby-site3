@@ -48,3 +48,14 @@ function shareSelected() {
       }
    });
 }
+
+
+$('#gallery-name-select').typeahead({
+   source: function (query, process) {
+      return $.getJSON(
+         "@{NamesGalleriesR}",
+         { query: query },
+         function (data) { return process(data); }
+      );
+   }
+});

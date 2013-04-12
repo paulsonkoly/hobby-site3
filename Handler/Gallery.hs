@@ -31,6 +31,7 @@ module Handler.Gallery
    , postAcquireImagesR
    , postRemoveImagesR
    , postAddImagesR
+   , getNamesGalleriesR
    )
 where
 
@@ -320,6 +321,7 @@ getImagesGalleryR galleryId = do
       runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
    defaultLayout $ do
       addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+      addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
       $(widgetFile "imagesGallery")
 
 
@@ -389,3 +391,18 @@ postAddImagesR = do
          return $ toJSON ()
       Error msg   -> return $ object [ "message" .= msg ]
    jsonToRepJson response
+
+
+-- | returns the list of matching gallery names
+--
+-- query : @?query=@
+-- JSON format : @[ GalleryName ]@
+getNamesGalleriesR :: Handler RepJson
+getNamesGalleriesR = do
+   query <- lookupGetParam "query"
+   response <- case query of
+      Just text -> do
+         galleries <- maybeAuth >>= flip namesGalleries text . fromJust
+         return $ toJSON $ map (galleryName . entityVal) galleries
+      Nothing -> return $ object [ "message" .= ("query parameter expected" :: Text) ]
+   jsonToRepJson response 

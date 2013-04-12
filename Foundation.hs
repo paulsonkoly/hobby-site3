@@ -106,7 +106,7 @@ class (Owned t) where
       ( PersistEntityBackend t ~ PersistMonadBackend (SqlPersist (GHandler s App))
       , PersistEntity t
       ) => Key t -> GHandler s App (Ownership t)
-   getOwnership tid = runDB (get404 tid) >>= \t -> toOwnership $ Entity tid t
+   getOwnership tid = runDB (get404 tid) >>= toOwnership . Entity tid
 
    -- | returns Authorized for resource owners (and admins)
    isOwner :: Ownership t -> GHandler s App AuthResult
@@ -211,6 +211,7 @@ instance Yesod App where
     -- if we change the js to query the proper galleryId as part of the Route all
     -- will be good again
     isAuthorized AddImagesR                  _ = isLoggedIn
+    isAuthorized NamesGalleriesR             _ = isLoggedIn
 
     -- default deny 
     isAuthorized _ _ = return
