@@ -41,7 +41,7 @@ import Yesod.Auth
 import Yesod.Form.Nic
 
 import Text.Blaze.Html.Renderer.Text
-import Data.Text (unpack)
+import Data.Text (pack, unpack)
 import Control.Monad
 import Data.Int
 import Data.Maybe
@@ -280,12 +280,11 @@ detectCycle _ Nothing = return False
 postMoveGalleryR :: GalleryId -> GalleryId -> Handler RepJson
 postMoveGalleryR what whereTo = do
    cyclic <- detectCycle what (Just whereTo)
-   response <- if cyclic 
-      then return $ object [ "message" .= ("Cannot create a cycle in parential relations." :: Text) ]
+   if cyclic 
+      then invalidArgs [ "Cannot create a cycle in parential relations." ]
       else do
          runDB $ update what [ GalleryParentId =. Just whereTo ]
-         return $ toJSON ()
-   jsonToRepJson response 
+         jsonToRepJson $ toJSON ()
 
 
 -- | Gallery move to the top POST handler
@@ -349,19 +348,18 @@ postAcquireImagesR galleryId = do
 postRemoveImagesR :: GalleryId -> Handler RepJson
 postRemoveImagesR galleryId = do
    reqData <- parseJsonBody
-   response <- case reqData of
-      Success dat -> liftM (toJSON . catMaybes) $ mapM (\pathPiece -> do
-            let mImageId = fromPathPiece pathPiece
-            maybe (return Nothing) (\imageId -> do
-               runDB $ deleteWhere
-                  [ ImageGalleryGalleryId ==. galleryId
-                  , ImageGalleryImageId   ==. imageId
-                  ]
-               return $ Just $ toJSON imageId
-               ) mImageId
-         ) dat
-      Error msg -> return $ object [ "message" .= msg ]
-   jsonToRepJson response
+   case reqData of
+      Success dat -> liftM (toJSON . catMaybes) (mapM (\pathPiece -> do
+                     let mImageId = fromPathPiece pathPiece
+                     maybe (return Nothing) (\imageId -> do
+                        runDB $ deleteWhere
+                           [ ImageGalleryGalleryId ==. galleryId
+                           , ImageGalleryImageId   ==. imageId
+                           ]
+                        return $ Just $ toJSON imageId
+                        ) mImageId
+                  ) dat) >>= jsonToRepJson
+      Error msg -> invalidArgs [ pack msg ]
 
 
 -- | JSON format representation for AddImagesR
@@ -378,19 +376,18 @@ instance FromJSON AddImagesData where
 postAddImagesR :: Handler RepJson
 postAddImagesR = do
    reqData <- parseJsonBody
-   response <- case reqData of
+   case reqData of
       Success dat -> do
          Entity galleryId gallery <- runDB $ getBy404 $ UniqueGallery $ whereTo' dat
          authorization <- toOwnership (Entity galleryId gallery) >>= isOwner
-         unless (authorization == Authorized) $ permissionDenied "You have to own the other gallery"
+         unless (authorization == Authorized) $ permissionDenied "You have to own the gallery"
          forM_ (imageIds dat) $ \imageId ->
             runDB $ insert ImageGallery
                { imageGalleryImageId   = imageId
                , imageGalleryGalleryId = galleryId
                } 
-         return $ toJSON ()
-      Error msg   -> return $ object [ "message" .= msg ]
-   jsonToRepJson response
+         jsonToRepJson $ object [ "message" .= ("Successfully added images" :: Text) ] 
+      Error msg -> invalidArgs [ pack msg ]
 
 
 -- | returns the list of matching gallery names
@@ -400,9 +397,8 @@ postAddImagesR = do
 getNamesGalleriesR :: Handler RepJson
 getNamesGalleriesR = do
    query <- lookupGetParam "query"
-   response <- case query of
+   case query of
       Just text -> do
          galleries <- maybeAuth >>= flip galleryNames text . fromJust
-         return $ toJSON $ map (galleryName . entityVal) galleries
-      Nothing -> return $ object [ "message" .= ("query parameter expected" :: Text) ]
-   jsonToRepJson response 
+         jsonToRepJson $ toJSON $ map (galleryName . entityVal) galleries
+      Nothing -> invalidArgs [ "query parameter expected" ]

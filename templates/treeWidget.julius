@@ -1,4 +1,4 @@
-$(function(){
+$(function() {
    $("#tree").dynatree({
       persist: true,
       checkbox: true,
@@ -9,6 +9,11 @@ $(function(){
       }
    });
 });
+
+
+function errorMessage(xhr) {
+   $("#messages").prepend('<div id="#message" class="alert alert-error">' + xhr.statusText + '</div>');
+}
 
 
 function newUnderFocused() {
@@ -44,11 +49,12 @@ function moveSelected() {
       for (i = 0; i < selected.length; i++) {
           $.ajax({
             url: "/gallery/" + selected[i].data.key + "/move/" + focused.data.key,
-            type: "post"
+            type: "post",
+            error: errorMessage
          }).done(function ( data ) {
             $("#tree").dynatree("getTree").reload();
             if (data.message != null) {
-               $("#main").prepend('<div id="#message" class="alert alert-warning">' + data.message + '</div>');
+               $("#messages").prepend('<div id="#message" class="alert alert-warning">' + data.message + '</div>');
             }
          });
       }
@@ -61,7 +67,8 @@ function moveTopSelected() {
    for (i = 0; i < selected.length; i++) {
       $.ajax({
          url: "/gallery/" + selected[i].data.key + "/movetop",
-         type: "post"
+         type: "post",
+         error: errorMessage
       }).done(function ( data ) { $("#tree").dynatree("getTree").reload(); });
    }
 }
@@ -72,7 +79,8 @@ function deleteSelected() {
    for (i = 0; i < objects.length; i++) {
       $.ajax({
          url: "/gallery/" + objects[i].data.key + "/del",
-         type: "post"
+         type: "post",
+         error: errorMessage
       }).done(function ( data ) {
          $("#tree").dynatree("getTree").reload();
       });

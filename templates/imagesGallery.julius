@@ -1,11 +1,17 @@
+function errorMessage(xhr) {
+   $("#messages").prepend('<div id="#message" class="alert alert-error">' + xhr.statusText + '</div>');
+}
+
+
 function acquireOrphans() {
     $.ajax({
       url: "@{AcquireImagesR galleryId}",
-      type: "post"
+      type: "post",
+      error: errorMessage
    }).done(function ( data ) {
       location.reload();
       if (data.message != null) {
-         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+         $("#messages").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
       }
    });
 }
@@ -19,10 +25,11 @@ function removeSelected() {
    $.ajax({
       url: "@{RemoveImagesR galleryId}",
       type: "post",
-      data: JSON.stringify(data)
+      data: JSON.stringify(data),
+      error: errorMessage
    }).done(function ( data ) {
       if (data.message != null) {
-         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+         $("#messages").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
       }
       // remove images on client side
       for (i = 0; i < data.length; i++) {
@@ -41,10 +48,11 @@ function shareSelected() {
    $.ajax({
       url: "@{AddImagesR}",
       type: "post",
-      data: JSON.stringify(data)
+      data: JSON.stringify(data),
+      error: errorMessage
    }).done(function ( data ) {
       if (data.message != null) {
-         $("#main").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+         $("#messages").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
       }
    });
 }
