@@ -4,7 +4,6 @@
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ HomeR GET POST
 
 /users                              UsersR           GET POST
 /user/#UserId                       UserR            GET
@@ -18,7 +17,7 @@
 /image/#ImageId/edit                EditImageR       GET POST
 /image/#ImageId/del                 DeleteImageR     POST
 
-/galleries                          GalleriesR       GET
+/                                   GalleriesR       GET
 /galleries/manage                   ManageGalleriesR GET
 /galleries/tree                     GalleryTreeR     GET
 /gallery_/new                       NewGalleryR      GET POST

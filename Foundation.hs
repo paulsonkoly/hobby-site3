@@ -148,6 +148,7 @@ instance Yesod App where
     defaultLayout widget = do
         master <- getYesod
         mmsg <- getMessage
+        muser <- maybeAuth
 
         -- We break up the default layout into two components:
         -- default-layout is the contents of the body tag, and
@@ -156,8 +157,11 @@ instance Yesod App where
         -- you to use normal widget features in default-layout.
 
         pc <- widgetToPageContent $ do
-            $(widgetFile "normalize")
+            addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+            addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
             addStylesheet $ StaticR css_bootstrap_css
+--            addStylesheetRemote "http://bootswatch.com/spacelab/bootstrap.min.css"
+            addStylesheet $ StaticR css_site_css
             $(widgetFile "default-layout")
         hamletToRepHtml $(hamletFile "templates/default-layout-wrapper.hamlet")
 
@@ -170,7 +174,6 @@ instance Yesod App where
     -- The page to be redirected to when authentication is required.
     authRoute _ = Just $ AuthR LoginR
 
-    isAuthorized HomeR       False = return Authorized
     isAuthorized (AuthR _)   _     = return Authorized
     isAuthorized (StaticR _) False = return Authorized
     isAuthorized FaviconR    False = return Authorized
@@ -256,9 +259,9 @@ instance YesodAuth App where
     type AuthId App = UserId
 
     -- Where to send a user after successful login
-    loginDest _ = HomeR
+    loginDest _ = GalleriesR
     -- Where to send a user after logout
-    logoutDest _ = HomeR
+    logoutDest _ = GalleriesR
 
     getAuthId     = getAuthIdHashDB AuthR (Just . UniqueUser)
     authPlugins _ = [authHashDB (Just . UniqueUser)]

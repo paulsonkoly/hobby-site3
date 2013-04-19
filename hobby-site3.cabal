@@ -19,7 +19,6 @@ library
                      Settings
                      Settings.StaticFiles
                      Settings.Development
-                     Handler.Home
                      Handler.User
                      Handler.Image
                      Handler.Gallery

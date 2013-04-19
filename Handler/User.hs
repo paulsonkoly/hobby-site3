@@ -20,7 +20,7 @@ entryForm muser =
       validNameField     = lengthInRange 5 10 textField
       validPasswordField = lengthAtLeast 8 $ goodPassword passwordField 
    in
-      renderDivs $ User
+      renderBootstrap $ User
         <$> areq validNameField     "Username" (liftM userName muser)
         <*> areq validPasswordField "Password" Nothing
         <*> pure "salt"

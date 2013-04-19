@@ -1,0 +1,124 @@
+/* some of this is based on the pixelgreen theme
+ * for these parts the credit goes to
+ *
+ *   AUTHOR           : Erwin Aligam
+ *   WEBSITE          : http://www.styleshout.com/
+ *   TEMPLATE NAME    : PixelGreen
+ *   TEMPLATE CODE    : S-0010
+ *   VERSION          : 1.3
+ *   LAST MODIFIED    : January 19, 2010
+ */
+
+html,
+body {
+   height: 100%;
+   /* The html and body elements cannot have any padding or margin. */
+   background: #FFF url(../img/bg.jpg) repeat-x;
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+   min-height: 100%;
+   height: auto !important;
+   height: 100%;
+   /* Negative indent footer by it's height */
+   margin: 0 auto -60px;
+}
+
+
+/* Set the fixed height of the footer here */
+#push,
+#footer {
+   height: 60px;
+}
+#footer {
+   background-color: #f5f5f5;
+}
+
+body {
+	margin: 0; 	padding: 0;
+	font: normal 'Trebuchet MS', Tahoma, sans-serif;
+	color: #555;
+}
+
+/* header */
+#header {
+   height: 100px;
+   text-align: left;	
+}
+#header-content {	
+   margin: 0 auto; padding: 0;
+   position: relative;
+}
+#header-content h1#logo {
+   font: bold 45px 'Trebuchet MS', Sans-serif;
+   letter-spacing: -2px; 
+   color: #FFF;
+   margin: 12px 0 0 0;
+   padding: 0;
+}
+#header-content h1#logo a {
+   text-decoration: none;
+   color: #FFF;
+}
+#header-content #slogan {
+   font: bold 12px 'Trebuchet Ms', Sans-serif;
+   text-transform: none;
+   color: #FFF;	
+   padding: 0;
+   margin: 0 0 0 50px;
+}
+
+/* header menu */
+#header .menu {
+   margin-top: 30px;
+}
+#header .menu ul.menutheme {
+   font: bolder 1.0em 'Trebuchet MS', sans-serif;
+   color: #FFF;
+   list-style: none;
+   margin: 0;
+   padding: 0;
+}
+#header .menu ul.menutheme > li {
+   display: inline;
+}
+#header .menu ul.menutheme > li > a {
+   float: left;
+   display: block;
+   padding: 3px 12px;	
+   color: #FFF;
+   background-color: #333;
+   text-decoration: none;
+   border-right: 1px solid #272727;
+}
+#header .menu ul.menutheme > li > a:hover {
+   background: #65944A;
+   color: #FFF;
+}
+#header .menu ul.menutheme > li#active > a {
+   background: #65944A;
+   color: #FFF;
+}
+#header .menu ul.menutheme > li.dropdown {
+   display: list-item;
+}
+#header .menu .dropdown-menu {
+   top: 28px;
+}
+//#header .menu ul.menutheme > li.dropdown > a > .caret {
+//   border-top-color: #fff;
+//   border-bottom-color: #fff;
+//}
+
+.gray  { color: #BFBFBF; }
+
+/* Lastly, apply responsive CSS fixes as necessary */
+@media (max-width: 767px) {
+   #footer {
+      margin-left: -20px;
+      margin-right: -20px;
+      padding-left: 20px;
+      padding-right: 20px;
+   }
+}
