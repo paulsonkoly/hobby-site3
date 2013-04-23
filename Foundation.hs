@@ -237,6 +237,24 @@ instance Yesod App where
     -- Place Javascript at bottom of the body tag so the rest of the page loads first
     jsLoader _ = BottomOfBody
 
+    errorHandler NotFound = fmap chooseRep $ defaultLayout $ do
+      setTitle "Request page not located"
+      [whamlet|
+         <div class="hero-unit center" style="margin-top: 20px">
+            <h1>
+               Page Not Found <small><font face="Tahoma" color="red">Error 404</font></small>
+            <br />
+            <p>
+               The page you requested could not be found.
+               Use your browsers <b>Back</b> button to navigate to the page you have prevously come from.
+            <p>
+               <b>
+                  Or you could just press this neat little button:
+            <a href="@{GalleriesR}" class="btn btn-large btn-info">
+               <i class="icon-home icon-white"></i> Take Me Home
+      |]
+    errorHandler other = defaultErrorHandler other
+
     -- What messages should be logged. The following includes all messages when
     -- in development, and warnings and errors in production.
     shouldLog _ _source level =
