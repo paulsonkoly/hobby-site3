@@ -1,15 +1,35 @@
-<h1> Users
-$if null users
-    <p> There are no users yet
-$else
-    <ul>
-        $forall Entity userId user <- users
-            <li> 
-                <a href=@{UserR userId} > #{userName user}
--- userAdmin currentUser
-$if True 
-  <hr>
-  <form method=post enctype=#{enctype}>
-    ^{userWidget}
-    <div>
-        <input type=submit value="Post New User">
+<div class="row">
+   <div class="span6">
+      <h3 > Users
+      <table class="table">
+         <thead>
+            <tr>
+               <th > Login
+               <th > Admin
+               <th > Operations
+         $forall Entity userId user <- users
+            <tr> 
+               <td>
+                  #{userName user}
+               <td>
+                  $if userAdmin user
+                     <i class="icon-ok">
+                  $else
+                     <i class="icon-remove">
+               <td align="right">
+                  <form method="post" action="@{DeleteUserR userId}">
+                     <div class="btn-group">
+                        <a class="btn" href="@{EditUserR userId}">
+                           <i class="icon-edit">
+                           <span>Edit
+                        <button type="submit" class="btn btn-danger delete">
+                           <i class="icon-trash icon-white">
+                           <span>Delete
+   <div class="span6">
+      <h3 > Create new user
+      <form method=post enctype=#{enctype} class="form-horizontal">
+         ^{userWidget}
+         <div class="controls">
+            <button type="submit" class="btn btn-primary">
+               <i class="icon-ok-sign icon-white">
+               <span>Post New User

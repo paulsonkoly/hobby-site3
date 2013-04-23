@@ -1,4 +1,0 @@
-<h1> #{userName user}
-<a href=@{EditUserR userId} > Edit
-<form method="post" action="@{DeleteUserR userId}">
-   <input type="submit" value="Delete">

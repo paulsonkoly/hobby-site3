@@ -1,5 +1,7 @@
-<h1>Edit #{userName user}
-<form method=post enctype=#{enctype}>
+<h3 > Edit #{userName user}
+<form method=post enctype=#{enctype} class="form-horizontal">
    ^{userWidget}
-   <div>
-      <input type=submit value="Edit user">
+   <div class="controls">
+      <button type="submit" class="btn btn-primary">
+         <i class="icon-ok-sign icon-white">
+         <span>Edit user

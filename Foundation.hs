@@ -181,10 +181,9 @@ instance Yesod App where
 
     -- route name, then a boolean indicating if it's a write request
     isAuthorized UsersR                      _ = isAdmin
-    isAuthorized (UserR uid)                 _ = getOwnership uid >>= canRead
     isAuthorized (EditUserR uid)             _ = getOwnership uid >>= isOwner
     isAuthorized (DeleteUserR _)             _ = isAdmin
-                                             
+
     isAuthorized ImagesR                     _ = return Authorized
     isAuthorized (ImageR imageId)            _ = getOwnership imageId >>= canRead
     isAuthorized CreateImageR                _ = isLoggedIn
