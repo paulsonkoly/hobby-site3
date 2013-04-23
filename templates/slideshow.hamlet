@@ -1,0 +1,27 @@
+<div class="row" style="margin-top: 20px">
+   <div id="header" class="span4">
+      <div id="header-content">
+         <h1 id="logo">
+            <a href="/">
+               Paul<span class="gray">Sonkoly</span>
+         <h2 id="slogan">Photoblog &amp; source repositories
+   $if not $ null images
+      <div class="span8">
+         <div class="ad-gallery">
+            <div class="ad-image-wrapper">
+            <div class="ad-controls">
+            <div class="ad-gallery">
+               <div class="ad-nav">
+                  <div class="ad-thumbs">
+                     <ul class="ad-thumb-list">
+                        $forall (Entity _ image) <- images
+                           <li>
+                              <a href="@{ImageFileR Large $ unpack $ imageMd5Hash image}">
+                                 <!-- use title here to show image title -->
+                                 <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" class="img-polaroid" />
+      <div class="pull-right" style="margin-right: 40px">
+         <a href="@{GalleryR galleryId}">
+            <i class="icon-remove icon-white"></i>
+   $else
+      <p>
+         This gallery is empty, slideshow cannot be played.

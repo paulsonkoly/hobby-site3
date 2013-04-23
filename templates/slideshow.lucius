@@ -7,16 +7,45 @@
  *
  * Demo and documentation: http://coffeescripter.com/code/ad-gallery/
  */
-.ad-gallery {
-   width: 600px;
+
+body {
+   background-color: #222;
+   text-align: center;
 }
+#header {
+   height: 100px;
+   text-align: left;	
+}
+#header-content {	
+   margin: 0 auto; padding: 0;
+   position: relative;
+}
+#header-content h1#logo {
+   font: bold 45px 'Trebuchet MS', Sans-serif;
+   letter-spacing: -2px; 
+   color: #FFF;
+   margin: 12px 0 0 0;
+   padding: 0;
+}
+#header-content h1#logo a {
+   text-decoration: none;
+   color: #FFF;
+}
+#header-content #slogan {
+   font: bold 12px 'Trebuchet Ms', Sans-serif;
+   text-transform: none;
+   color: #FFF;	
+   padding: 0;
+   margin: 0 0 0 50px;
+}
+.gray  { color: #BFBFBF; }
 .ad-gallery, .ad-gallery * {
    margin: 0;
    padding: 0;
 }
 .ad-gallery .ad-image-wrapper {
-   width: 100%;
-   height: 400px;
+   width: 670px;
+   height: 670px;
    margin-bottom: 10px;
    position: relative;
    overflow: hidden;
@@ -57,7 +86,7 @@
    width: 14px;
    height: 14px;
    line-height: 14px;
-   background-image: url("@{StaticR img_glyphicons_halflings_png}");
+   background-image: url("@{StaticR img_glyphicons_halflings_white_png}");
    background-position: -432px -72px;
    background-repeat: no-repeat;
    position: absolute;
@@ -141,7 +170,7 @@
    width: 14px;
    height:14px;
    display: block;
-   background: url(@{StaticR img_glyphicons_halflings_png}) no-repeat;
+   background: url(@{StaticR img_glyphicons_halflings_white_png}) no-repeat;
    background-position: -240px -72px;
 }
 .ad-gallery .ad-forward {
@@ -151,7 +180,7 @@
    right: -20px;
    width: 14px;
    height:14px;
-   background: url(@{StaticR img_glyphicons_halflings_png}) no-repeat;
+   background: url(@{StaticR img_glyphicons_halflings_white_png}) no-repeat;
    background-position: -336px -72px;
 }
 .ad-gallery .ad-nav .ad-thumbs {

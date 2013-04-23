@@ -160,7 +160,6 @@ instance Yesod App where
             addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
             addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
             addStylesheet $ StaticR css_bootstrap_css
---            addStylesheetRemote "http://bootswatch.com/spacelab/bootstrap.min.css"
             addStylesheet $ StaticR css_site_css
             $(widgetFile "default-layout")
         hamletToRepHtml $(hamletFile "templates/default-layout-wrapper.hamlet")
@@ -196,6 +195,7 @@ instance Yesod App where
 
     isAuthorized GalleriesR                  _ = return Authorized
     isAuthorized (GalleryR _)                _ = return Authorized
+    isAuthorized (SlideShowGalleryR _)       _ = return Authorized
     isAuthorized ManageGalleriesR            _ = isLoggedIn
     isAuthorized GalleryTreeR                _ = isLoggedIn
     isAuthorized NewGalleryR                 _ = isLoggedIn

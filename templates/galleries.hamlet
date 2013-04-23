@@ -1,11 +1,18 @@
-<h1>
-   $maybe gallery <- mGallery
-      #{galleryName gallery}
-      $maybe description <- galleryDescription gallery
-         <p>
-            #{description}
-   $nothing
-      Galleries
+<div class="row">
+   <div class="span8">
+      <h3>
+         $maybe gallery <- mGallery
+            #{galleryName gallery}
+            $maybe description <- galleryDescription gallery
+               <p>
+                  <small>#{description}
+         $nothing
+            Galleries
+   $maybe _ <- mImage
+      $maybe galleryId <- mGalleryId
+         <div class="span4" style="margin-top: 20px">
+            <a href="@{SlideShowGalleryR galleryId}" class="btn btn-info">
+               <i class="icon-film icon-white"></i> Slide show
 
 $if not $ null children
    <ul class="thumbnails">
@@ -13,18 +20,11 @@ $if not $ null children
         <li class="span2">
           <div class="thumbnail">
             <a href="@{GalleryR childId}" class="thumbnail">
-              <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }">
+              <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }" />
               <small>#{galleryName child}
 
-$if not $ null images
-   <div class="ad-gallery">
-      <div class="ad-image-wrapper">
-      <div class="ad-controls">
-      <div class="ad-nav">
-         <div class="ad-thumbs">
-            <ul class="ad-thumb-list">
-               $forall (Entity _ image) <- images
-                  <li>
-                     <a href="@{ImageFileR Large $ unpack $ imageMd5Hash image}">
-                        <!-- use title here to show image title -->
-                        <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}" class="img-polaroid">
+$maybe Entity _ image <- mImage
+   <div class="text-center row">
+      <img src="@{ImageFileR Large $ unpack $ imageMd5Hash image}" class="img-polaroid" />
+      <div class="pagination">
+         ^{paginationWidget'}

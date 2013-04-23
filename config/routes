@@ -21,6 +21,7 @@
 /galleries/tree                     GalleryTreeR     GET
 /gallery_/new                       NewGalleryR      GET POST
 /gallery/#GalleryId                 GalleryR         GET
+/gallery/#GalleryId/slideshow       SlideShowGalleryR GET
 /gallery/#GalleryId/new             NewChildGalleryR GET
 /gallery/#GalleryId/edit            EditGalleryR     GET POST
 /gallery/#GalleryId/move/#GalleryId MoveGalleryR     POST

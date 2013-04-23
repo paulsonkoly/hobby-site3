@@ -11,8 +11,10 @@ Portability :  portable
 
 module Handler.Gallery
    ( -- * Handlers
+     -- ** Browsing
      getGalleryR
    , getGalleriesR
+   , getSlideShowGalleryR
    -- ** Gallery manipulation
    , getManageGalleriesR
    , getNewGalleryR
@@ -39,9 +41,11 @@ import Import
 
 import Yesod.Auth
 import Yesod.Form.Nic
+import Yesod.Paginator
 
 import Text.Blaze.Html.Renderer.Text
 import Data.Text (pack, unpack)
+import Text.Hamlet (hamletFile)
 import Control.Monad
 import Data.Int
 import Data.Maybe
@@ -56,39 +60,24 @@ catAuthorized entities = liftM catMaybes $ forM entities $ \entity -> do
    return $ if read' == Authorized then Just entity else Nothing
 
 
-slideshowWidget 
-   :: Maybe Gallery                      -- ^ the gallery that we are showing
-   -> [ (Entity Image, Entity Gallery) ] -- ^ thumbnail child gallery pairs
-   -> [ Entity Image ]                   -- ^ images in this gallery
-   -> Widget
-slideshowWidget mGallery children images = do
-   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
-   addScript $ StaticR js_ad_gallery_jquery_ad_gallery_js
-   toWidget [julius|
-      $('.ad-gallery').adGallery(
-         { loader_image: "@{StaticR img_ad_gallery_loader_gif}"
-         , width: "700", height: "670"
-         , slideshow:
-            { start_label: "<i class=\"icon-play\"></i>"
-            , stop_label: "<i class=\"icon-stop\"></i>"
-            }
-         }
-      ); 
-   |]
-   $(widgetFile "galleries")
+visibleChildren :: Maybe GalleryId -> Handler [(Entity Image, Entity Gallery)]
+visibleChildren mGalleryId = do
+   maid <- maybeAuthId
+   allChildren <- galleryChildren mGalleryId [ Asc GalleryWeight ]
+   liftM catMaybes $ forM allChildren $ \child -> do
+         thumbnail <- galleryThumbnail maid $ entityKey child
+         return $ maybe Nothing (\image -> Just (image, child)) thumbnail
 
 
 -- | The gallery browser
 getGalleryR' :: Maybe GalleryId -> Handler RepHtml
 getGalleryR' mGalleryId = do
-   maid <- maybeAuthId
    mGallery <- maybe (return Nothing) (runDB . get) mGalleryId
-   allChildren <- galleryChildren mGalleryId [ Asc GalleryWeight ]
-   children <- liftM catMaybes $ forM allChildren $ \child -> do
-         thumbnail <- galleryThumbnail maid $ entityKey child
-         return $ maybe Nothing (\image -> Just (image, child)) thumbnail
+   children <- visibleChildren mGalleryId
    images <- maybe (return []) (galleryImages >=> catAuthorized) mGalleryId
-   defaultLayout $ slideshowWidget mGallery children images
+   (mImage', paginationWidget') <- paginate 1 images
+   let mImage = listToMaybe mImage'
+   defaultLayout $ setTitle "Galleries" >> $(widgetFile "galleries")
 
 
 -- | The gallery browser viewing the top level gallery
@@ -99,6 +88,36 @@ getGalleriesR = getGalleryR' Nothing
 -- | The gallery browser showing the requested gallery
 getGalleryR :: GalleryId -> Handler RepHtml
 getGalleryR = getGalleryR' . Just
+
+
+slideshowWidget :: GalleryId -> [Entity Image] -> Widget
+slideshowWidget galleryId images = do
+   setTitle "Gallery slideshow" 
+   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
+   addScript $ StaticR js_ad_gallery_jquery_ad_gallery_js
+   addStylesheet $ StaticR css_bootstrap_css
+   toWidget [julius|
+      $('.ad-gallery').adGallery(
+         { loader_image: "@{StaticR img_ad_gallery_loader_gif}"
+         , slideshow:
+            { start_label: "<i class=\"icon-play icon-white\"></i>"
+            , stop_label: "<i class=\"icon-stop icon-white\"></i>"
+            }
+         }
+      ); 
+   |]
+   $(widgetFile "slideshow")
+
+
+-- | The gallery slideshow
+getSlideShowGalleryR :: GalleryId -> Handler RepHtml
+getSlideShowGalleryR galleryId = do
+   maid <- maybeAuthId
+   gallery <- runDB $ get404 galleryId
+   images <- (galleryImages >=> catAuthorized) galleryId 
+   master <- getYesod
+   pc <- widgetToPageContent $ slideshowWidget galleryId images
+   hamletToRepHtml $(hamletFile "templates/plain-layout-wrapper.hamlet")
 
 
 -- | Turns the in database gallery structure (forest) into an aeson Value.
@@ -130,7 +149,6 @@ getGalleryTreeR = galleryTreeAeson >>= jsonToRepJson
 -- | Gallery tree view widget
 treeWidget :: Widget
 treeWidget = do 
-   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
    addScript (StaticR js_dynatree_jquery_ui_custom_js)
    addScript (StaticR js_dynatree_jquery_cookie_js)
    addScript (StaticR js_dynatree_jquery_dynatree_js)
@@ -318,10 +336,7 @@ getImagesGalleryR galleryId = do
    images' <- liftM (map entityKey) $ galleryImages galleryId
    images <- liftM concat $ forM images' (\iid ->
       runDB $ selectList (uidCond ++ [ ImageId ==. iid ]) [])
-   defaultLayout $ do
-      addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
-      addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
-      $(widgetFile "imagesGallery")
+   defaultLayout $(widgetFile "imagesGallery")
 
 
 -- | Acquires all images not present in any gallery
