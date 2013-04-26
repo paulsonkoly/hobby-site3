@@ -1,14 +1,24 @@
-<div class="well">
-   <h3>Usage
-   <ul>
-      <li><em>Focused</em> gallery is where the gallery name is highlighted.
-      <li><em>Selected</em> gallery is where the check box is ticked.
-   To <strong>create</strong> a gallery under an other gallery focus the parent gallery first and then click on <i class="icon-plus"></i>New.<br />
-   To create a <strong>top level</strong> gallery just click <i class="icon-plus"></i>Top level.<br />
-   To <strong>edit</strong> a gallery first focus it then click on <i class="icon-edit"></i>Edit.<br />
-   To <strong>move</strong> galleries first select then focus the parent and then click on <i class="icon-move"></i>Move.<br />
-   To <strong>move</strong> to top level select it, then click on <i class="icon-arrow-up"></i>Move top<br />
-   To <strong>delete</strong> galleries select the galleries you wish to delete.<br />
-   <span class="label label-warning">Warning!</span> We delete all galleries recursively that is accessible from the selected galleries. Once a gallery is deleted there is no going back.
-
+<p>
+   <div class="btn-group">
+      <button class="btn" onclick="newUnderFocused();" data-toggle="tooltip" title="" data-original-title="Create a gallery under the focused gallery">
+         <i class="icon-plus">
+         <span>New
+      <button class="btn" onclick="window.location.href = '@{NewGalleryR}';" data-toggle="tooltip" title="" data-original-title="Create a top level gallery">
+         <i class="icon-plus">
+         <span>Top level
+      <button class="btn" onclick="editFocused();" data-toggle="tooltip" title="" data-original-title="Edit focused gallery">
+         <i class="icon-edit">
+         <span>Edit
+      <button class="btn" onclick="imagesFocused();" data-toggle="tooltip" title="" data-original-title="Manage images in focused gallery">
+         <i class="icon-picture">
+         <span>Images
+      <button class="btn" onclick="moveSelected();" data-toggle="tooltip" title="" data-original-title="Move selected gallery under the focused gallery">
+         <i class="icon-move">
+         <span>Move
+      <button class="btn" onclick="moveTopSelected();" data-toggle="tooltip" title="" data-original-title="Move selected gallery to the top">
+         <i class="icon-arrow-up">
+         <span>Move top
+      <button class="btn btn-danger" onclick="deleteSelected();" data-toggle="tooltip" title="" data-original-title="Delete selected galleries">
+         <i class="icon-trash icon-white">
+         <span>Delete
 ^{treeWidget}

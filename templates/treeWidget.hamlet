@@ -1,25 +1,2 @@
 <p>
-   <div class="btn-group">
-      <button class="btn" onclick="newUnderFocused();">
-         <i class="icon-plus">
-         <span>New
-      <button class="btn" onclick="window.location.href = '@{NewGalleryR}';">
-         <i class="icon-plus">
-         <span>Top level
-      <button class="btn" onclick="editFocused();">
-         <i class="icon-edit">
-         <span>Edit
-      <button class="btn" onclick="imagesFocused();">
-         <i class="icon-picture">
-         <span>Images
-      <button class="btn" onclick="moveSelected();">
-         <i class="icon-move">
-         <span>Move
-      <button class="btn" onclick="moveTopSelected();">
-         <i class="icon-arrow-up">
-         <span>Move top
-      <button class="btn btn-danger" onclick="deleteSelected();">
-         <i class="icon-trash icon-white">
-         <span>Delete
-<p>
    <div id="tree">

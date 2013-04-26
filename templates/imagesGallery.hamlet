@@ -2,23 +2,23 @@
    <div class="span7">
       <div class="input-prepend">
          <div class="btn-group">
-            <button class="btn" onclick="acquireOrphans();">
+            <button class="btn" onclick="acquireOrphans();" data-toggle="tooltip" title="" data-original-title="Acquire images not yet associated with any gallery">
                <i class="icon-plus-sign">
                <span>Acquire orphans
-            <button class="btn" onclick="shareSelected();">
+            <button class="btn" onclick="shareSelected();" data-toggle="tooltip" title="" data-original-title="Share images with the specified gallery">
                <i class="icon-share">
                <span>Share selected
          <input type="text" placeholder="Gallery" id="gallery-name-select">
    <div class="span4">
       <div class="btn-group">
-         <button class="btn btn-warning" onclick="removeSelected();">
+         <button class="btn btn-warning" onclick="removeSelected();" data-toggle="tooltip" title="" data-original-title="Remove images from this gallery">
             <i class="icon-trash icon-white">
             <span>Remove selected
-         <button class="btn btn-danger" onclick="deleteSelected();">
+         <button class="btn btn-danger" onclick="deleteSelected();" data-toggle="tooltip" title="" data-original-title="Delete images from the system">
             <i class="icon-trash icon-white">
             <span>Delete selected
    <div class="span1">
-      <input id="toggle-all" type="checkbox" onChange="toggleAll();">
+      <input id="toggle-all" type="checkbox" onChange="toggleAll();" data-toggle="tooltip" title="" data-original-title="Select all">
 
 <ul class="thumbnails" id="image-list">
    $forall Entity imageId image <- images

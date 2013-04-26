@@ -3,6 +3,17 @@ function errorMessage(xhr) {
 }
 
 
+$(function () {
+   $("button,input").tooltip(
+      {
+         placement: "bottom",
+         html: true,
+         container: "body"
+      }
+   );
+});
+
+
 function toggleAll() {
    var checkbox = $('#toggle-all')[0];
    var chkboxes = $('#image-list [type=checkbox]');

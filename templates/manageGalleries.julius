@@ -16,6 +16,17 @@ function errorMessage(xhr) {
 }
 
 
+$(function () {
+   $("button").tooltip(
+      {
+         placement: "bottom",
+         html: true,
+         container: "body"
+      }
+   );
+});
+
+
 function newUnderFocused() {
    object = $("#tree").dynatree("getActiveNode");
    if (object != null) {
@@ -38,8 +49,6 @@ function imagesFocused() {
       window.location.href = "/gallery/" + object.data.key + "/images";
    }
 }
-
-
 
 
 function moveSelected() {
