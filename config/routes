@@ -9,7 +9,6 @@
 /user/#UserId/edit                  EditUserR        GET POST
 /user/#UserId/del                   DeleteUserR      POST
 
-/images                             ImagesR          GET
 /images/create                      CreateImageR     GET POST
 /images/#ImageType/#String          ImageFileR       GET
 /image/#ImageId                     ImageR           GET

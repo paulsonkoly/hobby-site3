@@ -3,6 +3,15 @@ function errorMessage(xhr) {
 }
 
 
+function toggleAll() {
+   var checkbox = $('#toggle-all')[0];
+   var chkboxes = $('#image-list [type=checkbox]');
+   for (i = 0; i < chkboxes.length; i++) {
+      chkboxes[i].checked = checkbox.checked;
+   }
+}
+
+
 function acquireOrphans() {
     $.ajax({
       url: "@{AcquireImagesR galleryId}",
@@ -15,6 +24,7 @@ function acquireOrphans() {
       }
    });
 }
+
 
 function removeSelected() {
    var data = [];
@@ -37,6 +47,28 @@ function removeSelected() {
       }
    });
 }
+
+
+function deleteSelected() {
+   var data = [];
+   var checked = $('#image-list :checked');
+   for (i = 0; i < checked.length; i++) {
+      $.ajax({
+         url: "/image/" + checked[i].id + "/del",
+         type: "post",
+         error: errorMessage
+      }).done(function ( data ) {
+         if (data.message != null) {
+            $("#messages").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+         }
+         // remove images on client side
+         for (i = 0; i < data.length; i++) {
+            $('#image-list #' + checked[i].id).parent().parent().remove();
+         }
+      });
+   }
+}
+
 
 function shareSelected() {
    var data = [];

@@ -1,6 +1,17 @@
+{- |
+Module      :  $Header$
+Description :  Image related handlers
+Copyright   :  (c) Paul Sonkoly
+License     :  AllRightsReserved
+
+Maintainer  :  sonkoly.pal@gmail.com
+Stability   :  stable
+Portability :  portable
+-}
+
 module Handler.Image
-   ( getImagesR
-   , getCreateImageR
+   ( -- * Handlers
+     getCreateImageR
    , postCreateImageR
    , getImageR
    , getImageFileR 
@@ -21,14 +32,13 @@ import Control.Monad
 import Lib.Image
 import Lib.ImageType
 import Lib.Accessibility
+import Lib.ToMarkup()
 
 
+-- | @Image@ upload @Widget@
 jQUploadWidget :: Widget
 jQUploadWidget = do
    addStylesheet $ StaticR css_fileupload_jquery_fileupload_ui_css
-   addStylesheet $ StaticR css_fileupload_style_css
-   addScriptRemote "//code.jquery.com/jquery-1.9.1.min.js"
-   addScriptRemote "//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"
    addScript $ StaticR js_fileupload_load_image_js
    addScript $ StaticR js_fileupload_tmpl_js
    addScript $ StaticR js_fileupload_canvas_to_blob_js
@@ -47,45 +57,30 @@ jQUploadWidget = do
    $(widgetFile "uploadWidget")
 
 
-
 data EditableImage = EditableImage { accessibility :: Accessibility }
 
 
-imageForm :: RenderMessage master FormMessage
-          => Image
-          -> Html
-          -> MForm sub master (FormResult EditableImage, GWidget sub master ())
+-- | @Image@ edit @Form@
+imageForm :: Image -> Form EditableImage
 imageForm image = renderDivs $ EditableImage
    <$> areq (selectField optionsEnum) "Accessibility" (Just $ imageAccessibility image)
 
 
-getImagesR :: Handler RepHtml
-getImagesR = do
-   mentity <- maybeAuth
-   images <- runDB $ selectList
-      ( case mentity of
-         Just (Entity uid user) -> if userAdmin user
-            then [] 
-            else [ ImageAccessibility ==. Public ]
-               ||. [ ImageAccessibility ==. Member, ImageUserId ==. uid ]
-         Nothing -> [ ImageAccessibility ==. Public ]
-      ) []
-   defaultLayout $(widgetFile "images")
-
-
--- | serves an image file request
+-- | serves an @Image@ file request
 getImageFileR :: ImageType -- ^ the image file type
               -> String    -- ^ the image md5 hash
               -> Handler ()
 getImageFileR i s = neverExpires >> sendFile typeJpeg (imageFilePath i s)
 
 
+-- | @Image@ upload / creation
 getCreateImageR :: Handler RepHtml
 getCreateImageR = do
    let imageUploadWidget = jQUploadWidget
    defaultLayout $(widgetFile "imageUpload")
 
 
+-- | handles @Image@ upload
 postCreateImageR :: Handler RepJson
 postCreateImageR = do
    files <- lookupFiles "files[]"
@@ -114,6 +109,7 @@ postCreateImageR = do
    jsonToRepJson $ object [ "files" .= jsonContent ]
 
 
+-- | shows a single @Image@
 getImageR :: ImageId -> Handler RepHtml
 getImageR imageId = do
    image <- runDB $ get404 imageId
@@ -126,6 +122,7 @@ getImageR imageId = do
          Nothing                -> False
 
 
+-- | serves the edit @Form@ for an @Image@
 getEditImageR :: ImageId -> Handler RepHtml
 getEditImageR imageId = do
    image <- runDB $ get404 imageId
@@ -133,6 +130,7 @@ getEditImageR imageId = do
    defaultLayout $(widgetFile "editImage")
 
 
+-- | handles @Image@ edit post requests
 postEditImageR :: ImageId -> Handler RepHtml
 postEditImageR imageId = do
    image <- runDB $ get404 imageId
@@ -147,10 +145,14 @@ postEditImageR imageId = do
          $(widgetFile "editImage") 
 
 
+-- | handles @Image@ delete post requests
+--
+-- TODO : this responds to JSON as well as Html requests. Yesod 1.2 has selectRep
+-- to support this. Once we migrate to 1.2, we should fix this up
 postDeleteImageR :: ImageId -> Handler RepHtml
 postDeleteImageR imageId = do
    image <- runDB $ get404 imageId
    setMessage $ toHtml $ "Image " <> imageOrigName image <> " has been deleted."
    liftIO $ deleteImage $ unpack $ imageMd5Hash image
    runDB $ deleteCascadeWhere [ ImageId ==. imageId ]
-   redirect ImagesR
+   redirect GalleriesR

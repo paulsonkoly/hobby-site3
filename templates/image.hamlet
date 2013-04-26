@@ -1,12 +1,87 @@
-<img class="img-polaroid" src="@{ImageFileR Large $ unpack $ imageMd5Hash image}">
+<div class="row" style="margin-top: 20px">
+   <div class="span8">
+      <img class="img-polaroid" src="@{ImageFileR Large $ unpack $ imageMd5Hash image}" />
+      $if canEditDelete
+         <form method="post" action="@{DeleteImageR imageId}" class="form-inline" style="margin-top: 20px">
+            <div class="btn-group">
+               <a class="btn" href="@{EditImageR imageId}">
+                  <i class="icon-edit">
+                  <span>Edit
+               <button type="submit" class="btn btn-danger delete">
+                  <i class="icon-trash icon-white">
+                  <span>Delete
 
-$if canEditDelete
-   <form method="post" action="@{DeleteImageR imageId}" class="form-inline">
-      <div class="btn-group">
-         <a class="btn" href="@{EditImageR imageId}">
-            <i class="icon-edit">
-            <span>Edit
-         <button type="submit" class="btn btn-danger delete">
-            <i class="icon-trash icon-white">
-            <span>Delete
+   <div class="span4">
+      <h3>#{imageOrigName image}
+      <table class="table">
+         <tbody>
+            $maybe property <- imageModel image
+               <tr>
+                  <td>Model
+                  <td>#{property}
+            $maybe property <- imageDateTime image
+               <tr>
+                  <td>Time
+                  <td>#{property}
+            $maybe property <- imageExposureTime image
+               <tr>
+                  <td>Exposure time
+                  <td>#{property}
+            $maybe property <- imageFNumber image
+               <tr>
+                  <td>f number
+                  <td>#{property}
+            $maybe property <- imageExposureProgram image
+               <tr>
+                  <td>Exposure Program
+                  <td>#{property}
+            $maybe property <- imageISOSpeedRatings image
+               <tr>
+                  <td>ISO speed ratings
+                  <td>#{property}
+            $maybe property <- imageCompression image
+               <tr>
+                  <td>compression
+                  <td>#{property}
+            $maybe property <- imageExposureBiasValue image
+               <tr>
+                  <td>Exposure bias value
+                  <td>#{property} EV
+            $maybe property <- imageSubjectDistance image
+               <tr>
+                  <td>Subject distance
+                  <td>#{property}
+            $maybe property <- imageMeteringMode image
+               <tr>
+                  <td>Metering mode
+                  <td>#{property}
+            $maybe property <- imageFlash image
+               <tr>
+                  <td>Flash
+                  <td>#{property}
+            $maybe property <- imageFocalLength image
+               <tr>
+                  <td>Focal length
+                  <td>#{property} mm
+            $maybe property <- imageExposureMode image
+               <tr>
+                  <td>Exposure mode
+                  <td>#{property}
+            $maybe property <- imageWhiteBalance image
+               <tr>
+                  <td>White balance
+                  <td>#{property}
+            $maybe property <- imageSceneCaptureType image
+               <tr>
+                  <td>Scene capture type
+                  <td>#{property}
+            $with res <- maybe "" id (imageResolutionUnit image)
+               $maybe property <- imageXResolution image
+                  <tr>
+                     <td>X resolution
+                     <td>#{property} #{res}
+               $maybe property <- imageYResolution image
+                  <tr>
+                     <td>Y resolution
+                     <td>#{property} #{res}
 

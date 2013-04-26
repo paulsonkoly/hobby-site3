@@ -183,7 +183,6 @@ instance Yesod App where
     isAuthorized (EditUserR uid)             _ = getOwnership uid >>= isOwner
     isAuthorized (DeleteUserR _)             _ = isAdmin
 
-    isAuthorized ImagesR                     _ = return Authorized
     isAuthorized (ImageR imageId)            _ = getOwnership imageId >>= canRead
     isAuthorized CreateImageR                _ = isLoggedIn
     isAuthorized (EditImageR imageId)        _ = getOwnership imageId >>= isOwner

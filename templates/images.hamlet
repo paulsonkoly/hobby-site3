@@ -1,9 +1,0 @@
-<h1> Images
-
-$if null images
-   <p> There are no images yet
-$else
-   <ul>
-      $forall Entity imageId image <- images
-         <a href="@{ImageR imageId}">
-            <img class="img-polaroid" src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash image}">

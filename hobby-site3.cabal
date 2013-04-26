@@ -25,6 +25,7 @@ library
                      Lib.Image
                      Lib.ImageType
                      Lib.Accessibility
+                     Lib.ToMarkup
 
     if flag(dev) || flag(library-only)
         cpp-options:   -DDEVELOPMENT

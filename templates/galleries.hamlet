@@ -23,8 +23,9 @@ $if not $ null children
               <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }" />
               <small>#{galleryName child}
 
-$maybe Entity _ image <- mImage
+$maybe Entity imageId image <- mImage
    <div class="text-center row">
-      <img src="@{ImageFileR Large $ unpack $ imageMd5Hash image}" class="img-polaroid" />
+      <a href="@{ImageR imageId}">
+         <img src="@{ImageFileR Large $ unpack $ imageMd5Hash image}" class="img-polaroid" />
       <div class="pagination">
          ^{paginationWidget'}
