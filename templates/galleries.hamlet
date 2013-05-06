@@ -1,16 +1,15 @@
 <div class="row">
-   <div class="span8">
+   <div class="span9">
       <h3>
          $maybe gallery <- mGallery
-            #{galleryName gallery}
+            #{galleryName gallery} 
             $maybe description <- galleryDescription gallery
-               <p>
-                  <small>#{description}
+               <small>#{description}
          $nothing
             Galleries
    $maybe _ <- mImage
       $maybe galleryId <- mGalleryId
-         <div class="span4" style="margin-top: 20px">
+         <div class="span3" style="margin-top: 20px">
             <a href="@{SlideShowGalleryR galleryId}" class="btn btn-info">
                <i class="icon-film icon-white"></i> Slide show
 

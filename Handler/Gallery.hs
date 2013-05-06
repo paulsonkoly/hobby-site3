@@ -13,6 +13,7 @@ module Handler.Gallery
    ( -- * Handlers
      -- ** Browsing
      getGalleryR
+   , getPhotoblogR
    , getGalleriesR
    , getSlideShowGalleryR
    -- ** Gallery manipulation
@@ -89,6 +90,11 @@ getGalleriesR = getGalleryR' Nothing
 -- | The gallery browser showing the requested gallery
 getGalleryR :: GalleryId -> Handler RepHtml
 getGalleryR = getGalleryR' . Just
+
+
+-- | Gallery browser for the Photoblog gallery
+getPhotoblogR :: Handler RepHtml
+getPhotoblogR = getGalleryR photoblogId
 
 
 slideshowWidget :: GalleryId -> [Entity Image] -> Widget

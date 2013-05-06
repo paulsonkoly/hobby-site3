@@ -132,6 +132,11 @@ instance Owned Gallery where
    canRead _ = return Authorized
 
 
+-- | the id of the special gallery : Photoblog
+photoblogId :: GalleryId
+photoblogId = Key $ toPersistValue (150 :: Int)
+
+
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
 instance Yesod App where
@@ -192,6 +197,8 @@ instance Yesod App where
     -- thus if we receive a request with good md5 we let it through, otherwise
     -- 404. This way we don't have to look up the database.
     isAuthorized (ImageFileR _ _)                _ = return Authorized
+
+    isAuthorized PhotoblogR                  False = return Authorized
 
     isAuthorized GalleriesR                      _ = return Authorized
     isAuthorized (GalleryR _)                    _ = return Authorized
@@ -276,9 +283,9 @@ instance YesodAuth App where
     type AuthId App = UserId
 
     -- Where to send a user after successful login
-    loginDest _ = GalleriesR
+    loginDest _ = PhotoblogR
     -- Where to send a user after logout
-    logoutDest _ = GalleriesR
+    logoutDest _ = PhotoblogR
 
     getAuthId     = getAuthIdHashDB AuthR (Just . UniqueUser)
     authPlugins _ = [authHashDB (Just . UniqueUser)]
