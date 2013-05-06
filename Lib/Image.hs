@@ -39,6 +39,7 @@ import Data.Maybe
 import Data.List
 import Data.Word            (Word8)
 import Data.Serialize       (encode)
+import Data.Char            (toLower)
 import Data.Typeable
 import Data.Conduit
 import Data.Conduit.Binary
@@ -66,7 +67,7 @@ jpegQuality = 95
 
 
 imageFilePath :: ImageType -> String -> FilePath
-imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ show i ++ ".jpeg"
+imageFilePath i s = dirName ++ "/" ++ s ++ "_" ++ (toLower <$> show i) ++ ".jpeg"
 
 
 toHex :: S.ByteString -> S.ByteString 
