@@ -16,6 +16,7 @@ module Handler.Image
    , getImageR
    , getImageFileR 
    , getEditImageR
+   , postAccessibilityImageR
    , postEditImageR
    , postDeleteImageR
    )
@@ -128,6 +129,13 @@ getEditImageR imageId = do
    image <- runDB $ get404 imageId
    (imageFormWidget, enctype) <- generateFormPost $ imageForm image
    defaultLayout $(widgetFile "editImage")
+
+
+-- | sets @Accessibility@ on Image
+postAccessibilityImageR :: ImageId -> Accessibility -> Handler RepJson
+postAccessibilityImageR imageId accessibility' = do
+   runDB $ update imageId [ ImageAccessibility =. accessibility' ]
+   jsonToRepJson $ toJSON ()
 
 
 -- | handles @Image@ edit post requests

@@ -52,6 +52,7 @@ import Data.Maybe
 import Data.Aeson.Types hiding (object)
 
 import Lib.ImageType
+import Lib.Accessibility
 
 
 catAuthorized :: (Owned t) => [ Entity t ] -> Handler [ Entity t ]
@@ -66,7 +67,7 @@ visibleChildren mGalleryId = do
    allChildren <- galleryChildren mGalleryId [ Asc GalleryWeight ]
    liftM catMaybes $ forM allChildren $ \child -> do
          thumbnail <- galleryThumbnail maid $ entityKey child
-         return $ maybe Nothing (\image -> Just (image, child)) thumbnail
+         return $ (\image -> (image, child)) <$> thumbnail
 
 
 -- | The gallery browser

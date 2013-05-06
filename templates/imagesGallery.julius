@@ -81,6 +81,26 @@ function deleteSelected() {
 }
 
 
+function accessibilitySelected() {
+   var data = [];
+   var checked = $('#image-list :checked');
+   var access = $('#accessibility option:selected');
+   for (i = 0; i < checked.length; i++) {
+      $.ajax({
+         url: "/image/" + checked[i].id + "/acc/" + access.text(),
+         type: "post",
+         error: errorMessage
+      }).done(function ( data ) {
+         if (data.message != null) {
+            $("#messages").prepend('<div id="#message" class="alert alert-info">' + data.message + '</div>');
+         }
+      });
+   }
+}
+
+
+
+
 function shareSelected() {
    var data = [];
    var checked = $('#image-list :checked');

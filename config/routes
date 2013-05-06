@@ -13,6 +13,7 @@
 /images/#ImageType/#String          ImageFileR       GET
 /image/#ImageId                     ImageR           GET
 /image/#ImageId/edit                EditImageR       GET POST
+/image/#ImageId/acc/#Accessibility  AccessibilityImageR  POST
 /image/#ImageId/del                 DeleteImageR     POST
 
 /                                   GalleriesR       GET

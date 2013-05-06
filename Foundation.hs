@@ -179,40 +179,41 @@ instance Yesod App where
     isAuthorized RobotsR     False = return Authorized
 
     -- route name, then a boolean indicating if it's a write request
-    isAuthorized UsersR                      _ = isAdmin
-    isAuthorized (EditUserR uid)             _ = getOwnership uid >>= isOwner
-    isAuthorized (DeleteUserR _)             _ = isAdmin
+    isAuthorized UsersR                          _ = isAdmin
+    isAuthorized (EditUserR uid)                 _ = getOwnership uid >>= isOwner
+    isAuthorized (DeleteUserR _)                 _ = isAdmin
 
-    isAuthorized (ImageR imageId)            _ = getOwnership imageId >>= canRead
-    isAuthorized CreateImageR                _ = isLoggedIn
-    isAuthorized (EditImageR imageId)        _ = getOwnership imageId >>= isOwner
-    isAuthorized (DeleteImageR imageId)      _ = getOwnership imageId >>= isOwner
+    isAuthorized (ImageR imageId)                _ = getOwnership imageId >>= canRead
+    isAuthorized CreateImageR                    _ = isLoggedIn
+    isAuthorized (AccessibilityImageR imageId _) _ = getOwnership imageId >>= isOwner
+    isAuthorized (EditImageR imageId)            _ = getOwnership imageId >>= isOwner
+    isAuthorized (DeleteImageR imageId)          _ = getOwnership imageId >>= isOwner
     -- the protection here is that the user can't guess the md5 from the route
     -- thus if we receive a request with good md5 we let it through, otherwise
     -- 404. This way we don't have to look up the database.
-    isAuthorized (ImageFileR _ _)            _ = return Authorized
+    isAuthorized (ImageFileR _ _)                _ = return Authorized
 
-    isAuthorized GalleriesR                  _ = return Authorized
-    isAuthorized (GalleryR _)                _ = return Authorized
-    isAuthorized (SlideShowGalleryR _)       _ = return Authorized
-    isAuthorized ManageGalleriesR            _ = isLoggedIn
-    isAuthorized GalleryTreeR                _ = isLoggedIn
-    isAuthorized NewGalleryR                 _ = isLoggedIn
+    isAuthorized GalleriesR                      _ = return Authorized
+    isAuthorized (GalleryR _)                    _ = return Authorized
+    isAuthorized (SlideShowGalleryR _)           _ = return Authorized
+    isAuthorized ManageGalleriesR                _ = isLoggedIn
+    isAuthorized GalleryTreeR                    _ = isLoggedIn
+    isAuthorized NewGalleryR                     _ = isLoggedIn
     -- would make sense to limit this to owner
-    isAuthorized (NewChildGalleryR _)        _ = isLoggedIn
-    isAuthorized (EditGalleryR galleryId)    _ = getOwnership galleryId >>= isOwner
-    isAuthorized (MoveGalleryR galleryId _)  _ = getOwnership galleryId >>= isOwner
-    isAuthorized (MoveTopGalleryR galleryId) _ = getOwnership galleryId >>= isOwner
-    isAuthorized (DeleteGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
-    isAuthorized (ImagesGalleryR galleryId)  _ = getOwnership galleryId >>= isOwner
-    isAuthorized (AcquireImagesR galleryId)  _ = getOwnership galleryId >>= isOwner
-    isAuthorized (RemoveImagesR galleryId)   _ = getOwnership galleryId >>= isOwner
+    isAuthorized (NewChildGalleryR _)            _ = isLoggedIn
+    isAuthorized (EditGalleryR galleryId)        _ = getOwnership galleryId >>= isOwner
+    isAuthorized (MoveGalleryR galleryId _)      _ = getOwnership galleryId >>= isOwner
+    isAuthorized (MoveTopGalleryR galleryId)     _ = getOwnership galleryId >>= isOwner
+    isAuthorized (DeleteGalleryR galleryId)      _ = getOwnership galleryId >>= isOwner
+    isAuthorized (ImagesGalleryR galleryId)      _ = getOwnership galleryId >>= isOwner
+    isAuthorized (AcquireImagesR galleryId)      _ = getOwnership galleryId >>= isOwner
+    isAuthorized (RemoveImagesR galleryId)       _ = getOwnership galleryId >>= isOwner
     -- this identifies the Gallery from the JSON uploaded that contains the name
     -- therefore authorization logic moves into the Handler which is bad bad bad
     -- if we change the js to query the proper galleryId as part of the Route all
     -- will be good again
-    isAuthorized AddImagesR                  _ = isLoggedIn
-    isAuthorized NamesGalleriesR             _ = isLoggedIn
+    isAuthorized AddImagesR                      _ = isLoggedIn
+    isAuthorized NamesGalleriesR                 _ = isLoggedIn
 
     -- default deny 
     isAuthorized _ _ = return

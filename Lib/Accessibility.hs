@@ -17,12 +17,19 @@ database, even if the result will be access denied.
 
 module Lib.Accessibility
    ( Accessibility(..)
+   , accessibilityWidget
    ) where
 
 import Prelude
+import Control.Applicative
+import Data.Maybe
 import Database.Persist
 import Database.Persist.TH
+import Data.Text
 
+import Yesod.Core
+import Yesod.Form.Fields
+import Yesod.Form.Types
 
 data Accessibility
    = Public  -- ^ the resource is accessible by everybody
@@ -31,3 +38,15 @@ data Accessibility
    deriving (Show, Read, Enum, Bounded, Eq)
 derivePersistField "Accessibility"
 
+
+instance PathPiece Accessibility where
+   toPathPiece      = pack . show
+   fromPathPiece pp = fst <$> (listToMaybe $ reads $ unpack pp)
+
+
+-- | Stand alone select field ( no @Form@ ) for @Accessibility@
+accessibilityWidget :: RenderMessage master FormMessage => GWidget sub master ()
+accessibilityWidget = fieldView (selectField opts) "accessibility" "Accessibility" [] (Left "") True
+   where
+      opts :: GHandler sub master (OptionList Accessibility)
+      opts = optionsEnum
