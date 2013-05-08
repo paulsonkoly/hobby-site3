@@ -12,10 +12,10 @@
                <!-- Menu Tabs -->
                <div class="menu">
                   <ul class="nav menutheme">
-                     <li id="active">
+                     <li id="#{activate Photoblog}">
                         <a href="@{PhotoblogR}">Photoblog
                      $maybe _ <- muser
-                        <li class="dropdown">
+                        <li class="dropdown" id="#{activate Galleries}">
                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Galleries <b class="caret"></b>
                            <!-- FIX style here is a bad hack to move the dropdown to the right place -->
                            <ul class="dropdown-menu" style="left : 90px">
@@ -24,7 +24,7 @@
                               <li><a href="@{CreateImageR}" tabindex="-1"><i class="icon-upload"></i> Image uploader</a>
                               <li><a href="@{ManageGalleriesR}" tabindex="-1"><i class="icon-edit"></i> Gallery manager</a>
                      $nothing
-                        <li>
+                        <li id="#{activate Galleries}">
                            <a href="@{GalleriesR}">Galleries
                      <li>
                         <a href="#">Projects
@@ -33,7 +33,7 @@
                   <div class="pull-right">
                      <ul class="nav pull-right menutheme">
                         $maybe Entity userId user <- muser
-                           <li class="dropdown">
+                           <li class="dropdown" id="#{activate Login}">
                               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Welcome, #{userName user} <b class="caret"></b>
                               <ul class="dropdown-menu pull-right">
                                  <li><a href="@{EditUserR userId}" tabindex="-1"><i class="icon-cog"></i> Preferences</a>
@@ -43,7 +43,7 @@
                                  <li class="divider">
                                  <li><a href="@{AuthR LogoutR}" tabindex="-1"><i class="icon-off"></i> Logout</a>
                         $nothing
-                           <li><a href="@{AuthR LoginR}"> Login</a>
+                           <li id="#{activate Login}"><a href="@{AuthR LoginR}"> Login</a>
    <div class="container">
       <div id="messages">
            $maybe msg <- mmsg

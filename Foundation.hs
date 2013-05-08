@@ -25,6 +25,8 @@ import Lib.ImageType
 import Lib.Accessibility
 
 import Control.Monad
+import Control.Applicative
+import Data.Text
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -136,6 +138,31 @@ instance Owned Gallery where
 photoblogId :: GalleryId
 photoblogId = Key $ toPersistValue (150 :: Int)
 
+data MenuItem = Login | Photoblog | Galleries deriving Eq
+
+-- active menut items
+active :: Route App -> Maybe MenuItem
+active (AuthR _)            = Just Login
+active UsersR               = Just Login
+active (EditUserR _)        = Just Login
+active PhotoblogR           = Just Photoblog
+active GalleriesR           = Just Galleries
+active (GalleryR _)         = Just Galleries
+active ManageGalleriesR     = Just Galleries
+active NewGalleryR          = Just Galleries
+active (NewChildGalleryR _) = Just Galleries
+active (EditGalleryR _)     = Just Galleries
+active (ImagesGalleryR _)   = Just Galleries
+active _                    = Nothing
+
+activator :: GHandler sub App (MenuItem -> Html)
+activator = do
+   croute <- getCurrentRoute
+   masterLift <- getRouteToMaster
+   return $ \item -> toHtml $ if Just item == ((masterLift <$> croute) >>= active)
+      then ("active" :: Text)
+      else ""
+
 
 -- Please see the documentation for the Yesod typeclass. There are a number
 -- of settings which can be configured by overriding methods here.
@@ -154,7 +181,7 @@ instance Yesod App where
         master <- getYesod
         mmsg <- getMessage
         muser <- maybeAuth
-
+        activate <- activator
         -- We break up the default layout into two components:
         -- default-layout is the contents of the body tag, and
         -- default-layout-wrapper is the entire page. Since the final
