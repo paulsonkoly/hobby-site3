@@ -56,3 +56,10 @@ ImageGallery
    imageId                  ImageId   DeleteCascade
    galleryId                GalleryId DeleteCascade
    UniqueImageGallery       imageId galleryId
+
+Project
+   name                     Text
+   shortDescription         Text
+   description              Text
+   clonePath                Text
+   UniqeProject             name

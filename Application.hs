@@ -24,6 +24,7 @@ import System.Log.FastLogger (mkLogger)
 import Handler.User
 import Handler.Image
 import Handler.Gallery
+import Handler.Project
 
 -- This line actually creates our YesodDispatch instance. It is the second half
 -- of the call to mkYesodData which occurs in Foundation.hs. Please see the

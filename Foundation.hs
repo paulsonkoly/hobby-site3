@@ -249,6 +249,11 @@ instance Yesod App where
     isAuthorized AddImagesR                      _ = isLoggedIn
     isAuthorized NamesGalleriesR                 _ = isLoggedIn
 
+    isAuthorized ProjectsR                   False = return Authorized
+    isAuthorized ProjectsR                   True  = isLoggedIn
+    isAuthorized (EditProjectR _)                _ = isLoggedIn
+    isAuthorized (DeleteProjectR _)              _ = isLoggedIn
+
     -- default deny 
     isAuthorized _ _ = return
        $ Unauthorized "This resource is not accessable because we are hitting default deny"
