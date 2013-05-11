@@ -256,7 +256,7 @@ postNewGalleryR = do
             , galleryWeight      = weight editable
             }
          setMessage $ toHtml ("The gallery has successfully been created." :: Text)
-         redirect GalleriesR
+         redirect ManageGalleriesR
       _ -> formHandler galleryWidget enctype "Creating a new gallery" NewGalleryR
 
 
@@ -281,7 +281,7 @@ postEditGalleryR galleryId = do
             , GalleryWeight      =. weight editable
             ]
          setMessage $ toHtml $ "The gallery " <> name editable <> " has successfully been updated."
-         redirect GalleriesR
+         redirect ManageGalleriesR
       _ -> formHandler galleryWidget enctype "Edit gallery" $ EditGalleryR galleryId
 
 
