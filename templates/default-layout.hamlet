@@ -26,8 +26,8 @@
                      $nothing
                         <li id="#{activate Galleries}">
                            <a href="@{GalleriesR}">Galleries
-                     <li>
-                        <a href="#">Projects
+                     <li id="#{activate Projects}">
+                        <a href="@{ProjectsR}">Projects
                      <li>
                         <a href="#">About
                   <div class="pull-right">

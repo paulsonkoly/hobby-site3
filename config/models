@@ -60,6 +60,6 @@ ImageGallery
 Project
    name                     Text
    shortDescription         Text
-   description              Text
+   description              Html Maybe
    clonePath                Text
    UniqeProject             name

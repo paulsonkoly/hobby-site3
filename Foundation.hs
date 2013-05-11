@@ -138,7 +138,7 @@ instance Owned Gallery where
 photoblogId :: GalleryId
 photoblogId = Key $ toPersistValue (150 :: Int)
 
-data MenuItem = Login | Photoblog | Galleries deriving Eq
+data MenuItem = Login | Photoblog | Galleries | Projects deriving Eq
 
 -- active menut items
 active :: Route App -> Maybe MenuItem
@@ -153,6 +153,8 @@ active NewGalleryR          = Just Galleries
 active (NewChildGalleryR _) = Just Galleries
 active (EditGalleryR _)     = Just Galleries
 active (ImagesGalleryR _)   = Just Galleries
+active (ProjectsR)          = Just Projects
+active (EditProjectR _)     = Just Projects
 active _                    = Nothing
 
 activator :: GHandler sub App (MenuItem -> Html)

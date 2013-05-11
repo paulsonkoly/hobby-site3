@@ -1,0 +1,23 @@
+<p>
+   <div class="accordion" id="project-accordion">
+      $forall Entity _ project <- projects
+         <div class="accordion-group">
+            <div class="accordion-heading">
+               <div class="container">
+                  <div class="row">
+                     <div class="span8">
+                        <h3 style="margin: 10px 0 10px 10px; line-height: 20px;">
+                           #{projectName project}<br />
+                           <small>#{projectShortDescription project}
+                     <div class="span4">
+                        <div class="pull-right" style="margin:20px 10px 0 0;">
+                           <img src="@{StaticR img_giggle_scm_git_png}">
+                           clone: <em>#{projectClonePath project}</em><br />
+                        $maybe _ <- projectDescription project
+                           <div class="pull-right" style="margin-right: 10px;">
+                              <a class="accordion-toggle" data-toggle="collapse" data-parent="#project-accordion" href="#{hprid project}" style="padding: 0;">
+                                 Show me more <i class="icon-chevron-down"></i>
+            $maybe description <- projectDescription project
+               <div id="#{prid project}" class="accordion-body collapse in">
+                  <div class="accordion-inner">
+                     #{description}
