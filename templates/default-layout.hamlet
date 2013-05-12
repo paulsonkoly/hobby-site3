@@ -26,8 +26,17 @@
                      $nothing
                         <li id="#{activate Galleries}">
                            <a href="@{GalleriesR}">Galleries
-                     <li id="#{activate Projects}">
-                        <a href="@{ProjectsR}">Projects
+                     $maybe _ <- muser
+                        <li class="dropdown" id="#{activate Projects}">
+                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Projects <b class="caret"></b>
+                           <!-- FIX style here is a bad hack to move the dropdown to the right place -->
+                           <ul class="dropdown-menu" style="left : 185px">
+                              <li><a href="@{ProjectsR}" tabindex="-1"><i class="icon-th-large"></i> Browse projects</a>
+                              <li class="divider">
+                              <li><a href="@{ManageProjectsR}" tabindex="-1"><i class="icon-edit"></i> Project manager</a>
+                     $nothing
+                        <li id="#{activate Projects}">
+                           <a href="@{ProjectsR}">Projects
                      <li>
                         <a href="#">About
                   <div class="pull-right">

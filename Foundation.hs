@@ -154,6 +154,7 @@ active (NewChildGalleryR _) = Just Galleries
 active (EditGalleryR _)     = Just Galleries
 active (ImagesGalleryR _)   = Just Galleries
 active (ProjectsR)          = Just Projects
+active ManageProjectsR      = Just Projects
 active (EditProjectR _)     = Just Projects
 active _                    = Nothing
 
@@ -253,6 +254,7 @@ instance Yesod App where
 
     isAuthorized ProjectsR                   False = return Authorized
     isAuthorized ProjectsR                   True  = isLoggedIn
+    isAuthorized ManageProjectsR                 _ = isLoggedIn
     isAuthorized (EditProjectR _)                _ = isLoggedIn
     isAuthorized (DeleteProjectR _)              _ = isLoggedIn
 

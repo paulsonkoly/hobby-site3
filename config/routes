@@ -35,5 +35,6 @@
 /galleries/names                    NamesGalleriesR  GET
 
 /projects/                          ProjectsR         GET POST
+/projects/manage                    ManageProjectsR   GET
 /project/#ProjectId/edit            EditProjectR      GET POST
 /project/#ProjectId/del             DeleteProjectR    POST

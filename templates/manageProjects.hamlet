@@ -1,0 +1,29 @@
+<div class="row">
+   <div class="span6">
+      <h3 >Projects
+      <table class="table">
+         <thead>
+            <tr>
+               <th>Name
+               <th>Operations
+         $forall Entity projectId project <- projects
+            <tr> 
+               <td>
+                  #{projectName project}
+               <td>
+                  <form method="post" action="@{DeleteProjectR projectId}">
+                     <div class="btn-group">
+                        <a class="btn" href="@{EditProjectR projectId}">
+                           <i class="icon-edit">
+                           <span>Edit
+                        <button type="submit" class="btn btn-danger delete">
+                           <i class="icon-trash icon-white">
+                           <span>Delete
+   <div class="span6">
+      <h3 > Create new project
+      <form method=post enctype="#{enctype}" action="@{destination}" class="form-horizontal">
+         ^{projectWidget}
+         <div class="controls">
+            <button type="submit" class="btn btn-primary">
+               <i class="icon-ok-sign icon-white">
+               <span>Post new project
