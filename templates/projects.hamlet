@@ -5,11 +5,11 @@
             <div class="accordion-heading">
                <div class="container">
                   <div class="row">
-                     <div class="span8">
+                     <div class="span7">
                         <h3 style="margin: 10px 0 10px 10px; line-height: 20px;">
                            #{projectName project}<br />
                            <small>#{projectShortDescription project}
-                     <div class="span4">
+                     <div class="span5">
                         <div class="pull-right" style="margin:20px 10px 0 0;">
                            <img src="@{StaticR img_giggle_scm_git_png}">
                            clone: <em>#{projectClonePath project}</em><br />
