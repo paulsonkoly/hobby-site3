@@ -10,8 +10,8 @@
    $maybe _ <- mImage
       $maybe galleryId <- mGalleryId
          <div class="span3" style="margin-top: 20px">
-            <a href="@{SlideShowGalleryR galleryId}" class="btn btn-info">
-               <i class="icon-film icon-white"></i> Slide show
+            <a href="@{SlideShowGalleryR galleryId}" class="btn btn-info"><i class="icon-film icon-white"></i>
+               Slide show
 
 $if not $ null children
    <ul class="thumbnails">
