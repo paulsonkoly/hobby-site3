@@ -138,7 +138,7 @@ instance Owned Gallery where
 photoblogId :: GalleryId
 photoblogId = Key $ toPersistValue (150 :: Int)
 
-data MenuItem = Login | Photoblog | Galleries | Projects deriving Eq
+data MenuItem = Login | Photoblog | Galleries | Projects deriving (Eq, Show)
 
 -- active menut items
 active :: Route App -> Maybe MenuItem
@@ -164,7 +164,7 @@ activator = do
    masterLift <- getRouteToMaster
    return $ \item -> toHtml $ if Just item == ((masterLift <$> croute) >>= active)
       then ("active" :: Text)
-      else ""
+      else pack $ show item
 
 
 -- Please see the documentation for the Yesod typeclass. There are a number
