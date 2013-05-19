@@ -23,7 +23,7 @@ where
 import Import
 import Yesod.Auth
 import Yesod.Auth.HashDB (setPassword)
-import Yesod.Form.Validations
+import Lib.FormValidation
 
 
 -- | data representing what can be edited on a User by an admin
@@ -50,7 +50,7 @@ validNameField, validPasswordField
    :: RenderMessage master FormMessage
    => Field sub master Text
 validNameField     = lengthInRange 5 10 textField
-validPasswordField = lengthAtLeast 8 $ goodPassword passwordField 
+validPasswordField = lengthValidation AtLeast 8 $ goodPassword passwordField 
 
 
 -- | the form of a new user, no default values, password required
