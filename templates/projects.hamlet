@@ -11,7 +11,7 @@
                            <small>#{projectShortDescription project}
                      <div class="span5">
                         <div class="pull-right" style="margin:20px 10px 0 0;">
-                           <img src="@{StaticR img_giggle_scm_git_png}">
+                           <img src="@{StaticR img_giggle_scm_git_png}" alt="git logo">
                            clone: <em>#{projectClonePath project}</em><br />
                         $maybe _ <- projectDescription project
                            <div class="pull-right" style="margin-right: 10px;">

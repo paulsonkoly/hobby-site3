@@ -19,12 +19,14 @@ $if not $ null children
         <li class="span2">
           <div class="thumbnail">
             <a href="@{GalleryR childId}" class="thumbnail">
-              <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }" />
+              <img src="@{ImageFileR Thumbnail $ unpack $ imageMd5Hash thumbnail }" alt="#{imageOrigName thumbnail}" />
               <small>#{galleryName child}
 
 $maybe Entity imageId image <- mImage
    <div class="text-center row">
       <a href="@{ImageR imageId}">
-         <img src="@{ImageFileR Large $ unpack $ imageMd5Hash image}" class="img-polaroid" />
+         <img src="@{ImageFileR Large $ unpack $ imageMd5Hash image}"
+              class="img-polaroid"
+              alt="#{imageOrigName image}" />
       <div class="pagination">
          ^{paginationWidget'}
