@@ -147,40 +147,54 @@ safeReadT (Just s) = TF.parseTime defaultTimeLocale "%Y:%m:%d %T" s
 safeReadT Nothing  = Nothing
 
 
+-- same as Exif.fromFile except it does not throw exceptions
+safeGetExif :: FilePath -> IO (Maybe Exif.Exif)
+safeGetExif fp = catch (liftM Just $ Exif.fromFile fp) oops
+   where
+      oops :: SomeException -> IO (Maybe Exif.Exif)
+      oops _ = return Nothing
+
+
+-- same as Exif.getTag but on Maybe Exif instead of Exif
+safeGetExifTag :: Maybe Exif.Exif -> String -> IO (Maybe String)
+safeGetExifTag (Just exif) s = Exif.getTag exif s
+safeGetExifTag Nothing _     = return Nothing
+
+
 -- | creates an Image from Exif
 getExif :: FilePath -> IO Image
 getExif original = do
-   exif                      <- Exif.fromFile original
-   make                      <- Exif.getTag exif "Make"
-   model                     <- Exif.getTag exif "Model"
-   xResolution               <- Exif.getTag exif "XResolution"
-   yResolution               <- Exif.getTag exif "YResolution"
-   resolutionUnit            <- Exif.getTag exif "ResolutionUnit"
-   dateTime                  <- Exif.getTag exif "DateTime"
-   compression               <- Exif.getTag exif "Compression"
-   exposureTime              <- Exif.getTag exif "ExposureTime"
-   fNumber                   <- Exif.getTag exif "FNumber"
-   exposureProgram           <- Exif.getTag exif "ExposureProgram"
-   isoSpeedRatings           <- Exif.getTag exif "ISOSpeedRatings"
-   exifVersion               <- Exif.getTag exif "ExifVersion"
-   dateTimeOriginal          <- Exif.getTag exif "DateTimeOriginal"
-   dateTimeDigitized         <- Exif.getTag exif "DateTimeDigitized"
-   exposureBiasValue         <- Exif.getTag exif "ExposureBiasValue"
-   subjectDistance           <- Exif.getTag exif "SubjectDistance"
-   meteringMode              <- Exif.getTag exif "MeteringMode"
-   flash                     <- Exif.getTag exif "Flash"
-   focalLength               <- Exif.getTag exif "FocalLength"
-   subSecTimeOriginal        <- Exif.getTag exif "SubSecTimeOriginal"
-   subSecTimeDigitized       <- Exif.getTag exif "SubSecTimeDigitized"
-   focalPlaneXResolution     <- Exif.getTag exif "FocalPlaneXResolution"
-   focalPlaneYResolution     <- Exif.getTag exif "FocalPlaneYResolution"
-   focalPlaneResolutionUnit  <- Exif.getTag exif "FocalPlaneResolutionUnit"
-   customRendered            <- Exif.getTag exif "CustomRendered"
-   exposureMode              <- Exif.getTag exif "ExposureMode"
-   whiteBalance              <- Exif.getTag exif "WhiteBalance"
-   sceneCaptureType          <- Exif.getTag exif "SceneCaptureType"
-   flashPixVersion           <- Exif.getTag exif "FlashPixVersion"
-   colorSpace                <- Exif.getTag exif "ColorSpace"
+   mexif                     <- safeGetExif original
+   make                      <- safeGetExifTag mexif "Make"
+   model                     <- safeGetExifTag mexif "Model"
+   xResolution               <- safeGetExifTag mexif "XResolution"
+   yResolution               <- safeGetExifTag mexif "YResolution"
+   resolutionUnit            <- safeGetExifTag mexif "ResolutionUnit"
+   dateTime                  <- safeGetExifTag mexif "DateTime"
+   compression               <- safeGetExifTag mexif "Compression"
+   exposureTime              <- safeGetExifTag mexif "ExposureTime"
+   fNumber                   <- safeGetExifTag mexif "FNumber"
+   exposureProgram           <- safeGetExifTag mexif "ExposureProgram"
+   isoSpeedRatings           <- safeGetExifTag mexif "ISOSpeedRatings"
+   exifVersion               <- safeGetExifTag mexif "ExifVersion"
+   dateTimeOriginal          <- safeGetExifTag mexif "DateTimeOriginal"
+   dateTimeDigitized         <- safeGetExifTag mexif "DateTimeDigitized"
+   exposureBiasValue         <- safeGetExifTag mexif "ExposureBiasValue"
+   subjectDistance           <- safeGetExifTag mexif "SubjectDistance"
+   meteringMode              <- safeGetExifTag mexif "MeteringMode"
+   flash                     <- safeGetExifTag mexif "Flash"
+   focalLength               <- safeGetExifTag mexif "FocalLength"
+   subSecTimeOriginal        <- safeGetExifTag mexif "SubSecTimeOriginal"
+   subSecTimeDigitized       <- safeGetExifTag mexif "SubSecTimeDigitized"
+   focalPlaneXResolution     <- safeGetExifTag mexif "FocalPlaneXResolution"
+   focalPlaneYResolution     <- safeGetExifTag mexif "FocalPlaneYResolution"
+   focalPlaneResolutionUnit  <- safeGetExifTag mexif "FocalPlaneResolutionUnit"
+   customRendered            <- safeGetExifTag mexif "CustomRendered"
+   exposureMode              <- safeGetExifTag mexif "ExposureMode"
+   whiteBalance              <- safeGetExifTag mexif "WhiteBalance"
+   sceneCaptureType          <- safeGetExifTag mexif "SceneCaptureType"
+   flashPixVersion           <- safeGetExifTag mexif "FlashPixVersion"
+   colorSpace                <- safeGetExifTag mexif "ColorSpace"
 
    return Image
       { imageUserId                   = undefined
@@ -262,7 +276,7 @@ mkImage f = try (do
       generateDerivatives original hash
       image <- getExif original
       return (size, image { imageMd5Hash = T.pack hash, imageOrigName = fileName f })
-      ) `finally` (removeIfExist temp)
+      ) `finally` removeIfExist temp
    )
 
 
