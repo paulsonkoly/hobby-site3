@@ -31,7 +31,7 @@ getProjectsR :: Handler RepHtml
 getProjectsR = do
    projects <- runDB $ selectList [] []
    let
-      escapeName = map ((\c -> if isLower c then c else '_') . toLower)
+      escapeName = map ((\c -> if isAlphaNum c then c else '_') . toLower)
       getId f = toHtml . pack . f . escapeName . unpack . projectName
       prid = getId id
       hprid = getId ('#' :)
@@ -81,7 +81,7 @@ postProjectsR = do
          _ <- runDB $ insert project
          setMessage $ toHtml $ projectName project <> " created"
          redirect ManageProjectsR
-      _ -> getManageProjectsR' $ Just (projectWidget, enctype) 
+      _ -> getManageProjectsR' $ Just (projectWidget, enctype)
 
 
 getEditProjectR' :: Maybe (Widget, Enctype) -> ProjectId -> Handler RepHtml
