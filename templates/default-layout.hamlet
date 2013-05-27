@@ -37,8 +37,6 @@
                      $nothing
                         <li id="#{activate Projects}">
                            <a href="@{ProjectsR}">Projects
-                     <li>
-                        <a href="#">About
                   <div class="pull-right">
                      <ul class="nav pull-right menutheme">
                         $maybe Entity userId user <- muser
