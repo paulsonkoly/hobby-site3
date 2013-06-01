@@ -8,3 +8,4 @@ config/settings.yml
 .hsenv*
 yesod-devel/
 cabal-dev/
+images/
