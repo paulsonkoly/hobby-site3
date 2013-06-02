@@ -103,9 +103,10 @@ md5Hash fn = do
 
 
 -- | Transforms (xsize, ysize) pair into a box fiting (max, max) retaining aspect ratio
-retainAspectRatio :: Int        -- ^ max value for bounding box
-                  -> (Int, Int) -- ^ (xsize, ysize)
-                  -> (Int, Int)
+retainAspectRatio :: Integral t
+                     => t      -- ^ max value for bounding box
+                     -> (t, t) -- ^ (xsize, ysize)
+                     -> (t, t)
 retainAspectRatio r (x, y)
    | x <= y    = (x * r `div` y, r)
    | otherwise = (r, y * r `div` x)
